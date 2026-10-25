@@ -1,0 +1,16 @@
+{
+  "name": "Callistenik",
+  "short_name": "Callistenik",
+  "description": "Séance matinale de 15–20 min au poids du corps, tapis de sol uniquement.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e1014",
+  "theme_color": "#e4572e",
+  "lang": "fr",
+  "icons": [
+    { "src": "icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

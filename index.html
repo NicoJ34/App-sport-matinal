@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Callistenik">
+<meta name="theme-color" content="#0e1014">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<title>Callistenik</title>
+<style>
+:root{
+  --bg:#f5f3ee; --surface:#ffffff; --text:#15171c; --muted:#686d77; --line:#e4e0d6; --chip:#ebe7dd;
+  --accent:#e4572e; --accent-ink:#ffffff; --ok:#1f8a6a;
+  --work:#e4572e; --rest:#1d7f62; --warm:#3457c2; --cool:#6a4fbd;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1014; --surface:#171a20; --text:#f1efe9; --muted:#969ca7; --line:#272b33; --chip:#21252d;
+    --accent:#ff6a3d; --ok:#3fb68f;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1014; --surface:#171a20; --text:#f1efe9; --muted:#969ca7; --line:#272b33; --chip:#21252d;
+  --accent:#ff6a3d; --ok:#3fb68f;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;
+  -webkit-text-size-adjust:100%}
+body{overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;touch-action:manipulation}
+.screen{display:none}
+.screen.on{display:block}
+
+/* ---------- Accueil ---------- */
+#home{padding:calc(env(safe-area-inset-top) + 18px) 16px calc(env(safe-area-inset-bottom) + 112px);max-width:520px;margin:0 auto}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.date{font-size:15px;color:var(--muted);text-transform:capitalize}
+.streak{font-size:15px;font-weight:600;white-space:nowrap}
+h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
+.meta{color:var(--muted);font-size:15px;margin-bottom:16px}
+.done-badge{display:inline-block;background:var(--ok);color:#fff;font-size:13px;font-weight:600;padding:4px 10px;border-radius:99px;margin-bottom:12px}
+.seg{display:flex;background:var(--chip);border-radius:12px;padding:3px;margin-bottom:10px}
+.seg button{flex:1;height:40px;border-radius:9px;font-weight:600;font-size:16px;color:var(--muted)}
+.seg button.sel{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.chip{height:38px;padding:0 14px;border-radius:99px;background:var(--chip);font-size:15px;font-weight:500;color:var(--text)}
+.chip.sel{background:var(--accent);color:var(--accent-ink)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-bottom:12px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:0 0 8px;font-weight:600;display:flex;justify-content:space-between}
+.ex{display:flex;gap:12px;padding:9px 0;border-top:1px solid var(--line)}
+.ex:first-of-type{border-top:0}
+.ex .n{width:22px;flex:none;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}
+.ex .t{font-weight:600;font-size:16px}
+.ex .c{font-size:13.5px;color:var(--muted);margin-top:2px;line-height:1.35}
+.simple{font-size:15px;line-height:1.7;color:var(--text)}
+.link{display:block;margin:6px auto 0;color:var(--accent);font-weight:600;font-size:16px;padding:10px}
+.hint{font-size:13px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.4}
+.startbar{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(env(safe-area-inset-bottom) + 12px);
+  background:linear-gradient(to top,var(--bg) 70%,transparent)}
+.start{display:block;width:100%;max-width:488px;margin:0 auto;height:64px;border-radius:18px;background:var(--accent);
+  color:var(--accent-ink);font-size:21px;font-weight:700;letter-spacing:.2px}
+.start:active{transform:scale(.98)}
+
+/* ---------- Séance ---------- */
+#run{position:fixed;inset:0;color:#fff;background:var(--work);transition:background-color .35s ease;
+  padding:calc(env(safe-area-inset-top) + 10px) 16px calc(env(safe-area-inset-bottom) + 14px)}
+#run.on{display:flex;flex-direction:column}
+#run.k-work{background:var(--work)} #run.k-rest{background:var(--rest)}
+#run.k-warm,#run.k-prep{background:var(--warm)} #run.k-cool{background:var(--cool)}
+#run.k-switch{background:#2b2f38}
+#run.paused{filter:saturate(.35) brightness(.85)}
+.rtop{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px;font-weight:600;opacity:.9}
+.quit{height:36px;padding:0 14px;border-radius:99px;background:rgba(255,255,255,.18);font-size:14px;font-weight:600}
+.quit.armed{background:#fff;color:#c0392b}
+.rmain{flex:1;display:flex;flex-direction:column;justify-content:center;text-align:center;min-height:0}
+.phase{font-size:15px;font-weight:700;letter-spacing:2px;opacity:.85}
+.exname{font-size:clamp(28px,8.5vw,40px);font-weight:800;line-height:1.08;margin:8px 0 8px;letter-spacing:-.5px}
+.cue{font-size:17px;line-height:1.35;opacity:.92;max-width:420px;margin:0 auto;min-height:46px}
+.side{display:inline-block;margin-top:10px;padding:4px 12px;border-radius:99px;background:rgba(255,255,255,.22);font-weight:700;font-size:14px;visibility:hidden}
+.side.show{visibility:visible}
+.timer{font-size:clamp(110px,40vw,170px);font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-4px;margin:10px 0 2px}
+.pausetxt{font-size:16px;font-weight:700;letter-spacing:2px;height:20px;opacity:.95}
+.next{font-size:16px;opacity:.88;margin-top:6px;min-height:22px}
+.bar{height:6px;border-radius:9px;background:rgba(255,255,255,.25);overflow:hidden;margin:12px 0 14px}
+.bar i{display:block;height:100%;width:0;background:#fff;border-radius:9px}
+.ctrls{display:grid;grid-template-columns:1fr 1fr 1.5fr 1fr;gap:10px}
+.ctrls button{height:64px;border-radius:18px;background:rgba(255,255,255,.18);font-size:18px;font-weight:700}
+.ctrls button.big{background:#fff;color:#15171c}
+.ctrls button:active{transform:scale(.96)}
+
+/* ---------- Fin ---------- */
+#end{padding:calc(env(safe-area-inset-top) + 40px) 16px calc(env(safe-area-inset-bottom) + 24px);max-width:520px;margin:0 auto;text-align:center}
+.bravo{font-size:44px;font-weight:800;letter-spacing:-1px;margin:8px 0}
+.stats{display:flex;justify-content:center;gap:28px;margin:18px 0 30px}
+.stats b{display:block;font-size:30px;font-variant-numeric:tabular-nums}
+.stats span{font-size:13px;color:var(--muted)}
+.q{font-size:18px;font-weight:600;margin-bottom:12px}
+.fb{display:grid;gap:10px}
+.fb button{height:58px;border-radius:16px;background:var(--surface);border:1px solid var(--line);font-size:17px;font-weight:600}
+.fb button.sel{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.thanks{color:var(--ok);font-weight:600;height:24px;margin-top:12px}
+</style>
+</head>
+<body>
+
+<!-- ===== Accueil ===== -->
+<section id="home" class="screen on">
+  <div class="top"><div class="date" id="hDate"></div><div class="streak" id="hStreak"></div></div>
+  <h1 id="hTitle"></h1>
+  <div class="meta" id="hMeta"></div>
+  <div id="hDone"></div>
+  <div class="seg" id="segDur">
+    <button data-d="15">15 min</button><button data-d="20">20 min</button>
+  </div>
+  <div class="chips">
+    <button class="chip" id="cLegs">🦵 Préserver les jambes</button>
+    <button class="chip" id="cSilent">🤫 Silencieux</button>
+    <button class="chip" id="cVoice">🗣️ Voix</button>
+  </div>
+  <div id="hPlan"></div>
+  <button class="link" id="reroll">↻ Autre séance</button>
+  <p class="hint" id="hHint"></p>
+  <div class="startbar"><button class="start" id="startBtn">Démarrer</button></div>
+</section>
+
+<!-- ===== Séance ===== -->
+<section id="run" class="screen">
+  <div class="rtop"><span id="rInfo"></span><button class="quit" id="quitBtn">Quitter</button></div>
+  <div class="rmain" id="rTap">
+    <div class="phase" id="rPhase"></div>
+    <div class="exname" id="rName"></div>
+    <div class="cue" id="rCue"></div>
+    <div><span class="side" id="rSide"></span></div>
+    <div class="timer" id="rTimer">0</div>
+    <div class="pausetxt" id="rPause"></div>
+    <div class="next" id="rNext"></div>
+  </div>
+  <div class="bar"><i id="rBar"></i></div>
+  <div class="ctrls">
+    <button id="bMinus">−10</button>
+    <button id="bPlus">+10</button>
+    <button class="big" id="bPause">Pause</button>
+    <button id="bSkip">⏭</button>
+  </div>
+</section>
+
+<!-- ===== Fin ===== -->
+<section id="end" class="screen">
+  <div style="font-size:56px">🎉</div>
+  <div class="bravo">Bravo !</div>
+  <div class="stats">
+    <div><b id="eTime"></b><span>durée</span></div>
+    <div><b id="eEx"></b><span>exercices</span></div>
+    <div><b id="eStreak"></b><span>série</span></div>
+  </div>
+  <div class="q">Comment c'était ?</div>
+  <div class="fb" id="fb">
+    <button data-f="easy">😌 Trop facile</button>
+    <button data-f="ok">💪 Parfait</button>
+    <button data-f="hard">🥵 Trop dur</button>
+  </div>
+  <div class="thanks" id="thanks"></div>
+  <button class="link" id="homeBtn">Retour à l'accueil</button>
+</section>
+
+<script>
+"use strict";
+/* =========================================================
+   Bibliothèque d'exercices — tapis de sol uniquement
+   cat : push | pull | legs | core | cardio | warm | mob | cool
+   tags : noise = sauts ; legs = sollicite fortement les jambes
+   sw : unilatéral → changement de côté à mi-temps
+   ========================================================= */
+const EX = [
+  // Poussée
+  {id:"pushup",  cat:"push", name:"Pompes", cue:"Corps gainé, coudes à 45°, poitrine près du sol. Sur les genoux si besoin."},
+  {id:"pike",    cat:"push", name:"Pompes pike", cue:"Fesses hautes en V inversé, descends la tête entre les mains."},
+  {id:"diamond", cat:"push", name:"Pompes diamant", cue:"Mains jointes sous la poitrine, coudes serrés le long du corps."},
+  {id:"hindu",   cat:"push", name:"Pompes hindoues", cue:"Du chien tête en bas, plonge vers l'avant jusqu'au cobra, puis reviens."},
+  {id:"wide",    cat:"push", name:"Pompes mains larges", cue:"Mains plus larges que les épaules, descente lente et contrôlée."},
+  {id:"updown",  cat:"push", name:"Planche haute ↔ basse", cue:"Passe des coudes aux mains et inversement, bassin immobile."},
+  {id:"taps",    cat:"push", name:"Shoulder taps", cue:"Planche bras tendus, touche l'épaule opposée sans balancer le bassin."},
+  // Tirage (sans barre)
+  {id:"ytw",     cat:"pull", name:"Superman Y-T-W", cue:"Allongé sur le ventre, bras en Y, puis T, puis W. Omoplates serrées."},
+  {id:"snow",    cat:"pull", name:"Reverse snow angels", cue:"Allongé ventre, bras décollés, balaye des hanches jusqu'au-dessus de la tête."},
+  {id:"suppull", cat:"pull", name:"Superman pulls", cue:"Allongé ventre, bras devant, tire les coudes vers les hanches en serrant le dos."},
+  {id:"revplank",cat:"pull", name:"Planche inversée", cue:"Assis, mains derrière toi, monte le bassin, corps aligné, regard au plafond."},
+  {id:"birddog", cat:"pull", name:"Bird dog", cue:"À 4 pattes, tends bras et jambe opposés, alterne lentement, dos plat."},
+  {id:"swim",    cat:"pull", name:"Nage au sol", cue:"Allongé ventre, bras et jambes décollés, petits battements alternés."},
+  // Jambes
+  {id:"squat",   cat:"legs", tags:["legs"], name:"Squats", cue:"Pieds largeur d'épaules, fesses en arrière, talons au sol."},
+  {id:"revlunge",cat:"legs", tags:["legs"], name:"Fentes arrière alternées", cue:"Grand pas en arrière, le genou arrière frôle le tapis."},
+  {id:"bridge",  cat:"legs", name:"Pont fessier", cue:"Sur le dos, pousse dans les talons, serre les fessiers en haut 1 s."},
+  {id:"slbridge",cat:"legs", tags:["legs"], sw:true, name:"Pont fessier unijambe", cue:"Une jambe tendue en l'air, pousse dans le talon au sol."},
+  {id:"hold90",  cat:"legs", tags:["legs"], name:"Squat tenu à 90°", cue:"Cuisses parallèles au sol, bras devant, tiens la position."},
+  {id:"latlunge",cat:"legs", tags:["legs"], name:"Fentes latérales alternées", cue:"Grand pas sur le côté, fesses en arrière, l'autre jambe tendue."},
+  {id:"sumo",    cat:"legs", tags:["legs"], name:"Squat sumo pulsé", cue:"Pieds écartés, pointes ouvertes, petites pulsations en bas."},
+  {id:"calves",  cat:"legs", tags:["legs"], name:"Mollets debout", cue:"Monte sur la pointe des pieds, 1 s en haut, descente lente."},
+  {id:"jsquat",  cat:"legs", tags:["legs","noise"], name:"Squats sautés", cue:"Squat puis saut explosif, réception souple sur l'avant du pied."},
+  // Gainage
+  {id:"plank",   cat:"core", name:"Planche", cue:"Sur les coudes, corps aligné, serre fessiers et abdos."},
+  {id:"side",    cat:"core", sw:true, name:"Planche latérale", cue:"Sur un coude, bassin haut, corps aligné. Genou au sol si besoin."},
+  {id:"hollow",  cat:"core", name:"Hollow hold", cue:"Bas du dos plaqué au sol, épaules et jambes décollées. Genoux pliés si besoin."},
+  {id:"deadbug", cat:"core", name:"Dead bug", cue:"Sur le dos, bras et jambe opposés descendent lentement, dos collé au sol."},
+  {id:"climb",   cat:"core", name:"Mountain climbers", cue:"Planche bras tendus, ramène les genoux vers la poitrine en alternance."},
+  {id:"bear",    cat:"core", name:"Bear hold", cue:"À 4 pattes, genoux décollés de 2 cm, dos plat. Tiens."},
+  {id:"revcrunch",cat:"core",name:"Crunch inversé", cue:"Sur le dos, ramène les genoux vers la poitrine en décollant le bassin."},
+  // Cardio
+  {id:"jacks",   cat:"cardio", tags:["legs","noise"], name:"Jumping jacks", cue:"Saute en écartant bras et jambes, rythme régulier."},
+  {id:"stepjack",cat:"cardio", tags:["legs"], name:"Step jacks", cue:"Sans saut : un pied puis l'autre sur le côté, bras au-dessus de la tête."},
+  {id:"burpee",  cat:"cardio", tags:["legs","noise"], name:"Burpees", cue:"Squat, mains au sol, planche, retour, saut. Sans pompe si besoin."},
+  {id:"burpeeq", cat:"cardio", tags:["legs"], name:"Burpees sans saut", cue:"Mains au sol, recule un pied puis l'autre, reviens et redresse-toi."},
+  {id:"knees",   cat:"cardio", tags:["legs","noise"], name:"Montées de genoux", cue:"Course sur place, genoux à hauteur de hanches, bras actifs."},
+  {id:"march",   cat:"cardio", tags:["legs"], name:"Marche genoux hauts", cue:"Sans saut, genoux hauts et bras actifs, rythme soutenu."},
+  {id:"skater",  cat:"cardio", tags:["legs","noise"], name:"Skater hops", cue:"Bonds latéraux d'un pied sur l'autre, jambe arrière croisée."},
+  {id:"skaterq", cat:"cardio", tags:["legs"], name:"Patineur sans saut", cue:"Fente arrière croisée d'un côté puis de l'autre, rythme vif."},
+  // Échauffement
+  {id:"arms",    cat:"warm", name:"Rotations de bras", cue:"Grands cercles vers l'avant puis vers l'arrière."},
+  {id:"catcow",  cat:"warm", name:"Chat-vache", cue:"À 4 pattes, arrondis puis creuse le dos au rythme de la respiration."},
+  {id:"hipcirc", cat:"warm", sw:true, name:"Cercles de genou à 4 pattes", cue:"À 4 pattes, dessine de grands cercles avec un genou."},
+  {id:"thoracic",cat:"warm", sw:true, name:"Rotations thoraciques", cue:"À 4 pattes, main derrière la tête, ouvre le coude vers le plafond."},
+  {id:"inchworm",cat:"warm", name:"Inchworm", cue:"Debout, marche avec les mains jusqu'à la planche, puis reviens."},
+  {id:"dogcobra",cat:"warm", name:"Chien tête en bas ↔ cobra", cue:"Alterne lentement entre les deux postures."},
+  {id:"wgs",     cat:"warm", sw:true, name:"World's greatest stretch", cue:"Fente avant, main au sol, ouvre le bras vers le plafond."},
+  {id:"deepsq",  cat:"warm", name:"Squat profond tenu", cue:"Descends au plus bas, coudes poussent les genoux, dos long."},
+  {id:"legswing",cat:"warm", sw:true, name:"Balancements de jambe", cue:"Debout, balance une jambe d'avant en arrière, amplitude progressive."},
+  // Mobilité (bloc principal des jours doux)
+  {id:"cossack", cat:"mob", tags:["legs"], name:"Squat cosaque lent", cue:"Pieds très écartés, bascule lentement sur une jambe puis l'autre."},
+  {id:"lowlunge",cat:"mob", sw:true, name:"Fente basse tenue", cue:"Genou arrière au sol, pousse les hanches vers l'avant."},
+  {id:"dogpedal",cat:"mob", name:"Chien tête en bas pédalé", cue:"En V inversé, plie un genou puis l'autre, talons vers le sol."},
+  {id:"frog",    cat:"mob", name:"Grenouille", cue:"À 4 pattes, genoux écartés, recule doucement les hanches."},
+  {id:"scorpion",cat:"mob", name:"Scorpion au sol", cue:"Allongé ventre, amène un pied vers la main opposée, alterne."},
+  {id:"thread",  cat:"mob", sw:true, name:"Aiguille dans le chas", cue:"À 4 pattes, glisse un bras sous l'autre, épaule au sol."},
+  // Retour au calme
+  {id:"child",   cat:"cool", name:"Posture de l'enfant", cue:"Fesses sur les talons, bras devant, respire lentement."},
+  {id:"pigeon",  cat:"cool", sw:true, name:"Pigeon", cue:"Une jambe pliée devant, l'autre tendue derrière, buste vers l'avant."},
+  {id:"hams",    cat:"cool", name:"Ischios assis", cue:"Jambes tendues, penche-toi depuis les hanches, dos long."},
+  {id:"quad",    cat:"cool", sw:true, name:"Quadriceps allongé", cue:"Allongé sur le côté, attrape la cheville, genoux serrés."},
+  {id:"twist",   cat:"cool", sw:true, name:"Torsion allongée", cue:"Sur le dos, genou vers le côté opposé, épaules au sol."},
+  {id:"cobra",   cat:"cool", name:"Cobra", cue:"Allongé ventre, pousse sur les mains, ouvre la poitrine."},
+  {id:"butterfly",cat:"cool",name:"Papillon", cue:"Assis, plantes de pieds jointes, laisse descendre les genoux."},
+  {id:"baby",    cat:"cool", name:"Bébé heureux", cue:"Sur le dos, attrape tes pieds, genoux vers les aisselles."},
+].map(e => ({tags:[], sw:false, ...e}));
+
+/* Thèmes de la semaine (0 = dimanche) */
+const THEMES = {
+  1:{id:"push_core", title:"Poussée + gainage",        slots:["push","core","push","core","pull"]},
+  2:{id:"mob_legs",  title:"Mobilité + jambes douces", slots:["legs","mob","core","legs","mob"]},
+  3:{id:"full",      title:"Full body",                slots:["legs","push","core","pull","cardio"]},
+  4:{id:"pull_core", title:"Dos + gainage",            slots:["pull","core","pull","core","push"]},
+  5:{id:"full_cardio",title:"Full body cardio",        slots:["cardio","push","legs","core","cardio"]},
+  6:{id:"legs_core", title:"Jambes + gainage",         slots:["legs","core","legs","pull","legs"]},
+  0:{id:"mobility",  title:"Mobilité & récupération",  slots:["mob","mob","core","mob","mob"]},
+};
+const T = {prep:10, warm:30, work:40, rest:20, cool:30, switch:5}; // secondes
+
+/* ---------- utilitaires ---------- */
+const $ = s => document.querySelector(s);
+const params = new URLSearchParams(location.search);
+const FAST = Math.max(1, Number(params.get("fast")) || 1); // test : accélère le minuteur
+const ymd = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const parseYmd = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const TODAY = params.get("date") || ymd(new Date());
+function seedOf(str){ let h = 2166136261; for (let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h>>>0; }
+function rngFor(str){ let a = seedOf(str); return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a>>>15, 1|a); t = t + Math.imul(t ^ t>>>7, 61|t) ^ t; return ((t ^ t>>>14)>>>0) / 4294967296; }; }
+const fmt = s => { s = Math.max(0, Math.round(s)); const m = Math.floor(s/60), r = s%60; return m ? m+":"+String(r).padStart(2,"0") : String(r); };
+
+/* ---------- état persistant ---------- */
+const KEY = "callistenik_v1";
+let S = {duration:15, silent:false, voice:true, beeps:true, history:[], day:{}};
+try { Object.assign(S, JSON.parse(localStorage.getItem(KEY)) || {}); } catch(e) {}
+if (S.day.date !== TODAY) S.day = {date:TODAY, preserve:false, reroll:0};
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} }
+
+/* ---------- générateur de séance ---------- */
+function pool(cat, opt){
+  let p = cat === "mob" ? EX.filter(e => e.cat === "mob" || e.cat === "cool") : EX.filter(e => e.cat === cat);
+  if (opt.silent)   p = p.filter(e => !e.tags.includes("noise"));
+  if (opt.preserve) p = p.filter(e => !e.tags.includes("legs"));
+  return p;
+}
+function generate(date, opt, exclude = new Set()){
+  const rng = rngFor(date + "|" + opt.reroll);
+  const theme = THEMES[parseYmd(date).getDay()];
+  let slots = theme.slots.slice(), changed = false;
+  if (opt.preserve){
+    const sub = ["core","push","pull","mob"]; let k = 0;
+    slots = slots.map(s => (s === "legs" || s === "cardio") ? (changed = true, sub[k++ % sub.length]) : s);
+  }
+  const used = new Set(), main = [];
+  for (const s of slots){
+    const base = pool(s, opt).filter(e => !used.has(e.id));
+    let c = base.filter(e => !exclude.has(e.id));
+    if (!c.length) c = base.length ? base : pool(s, opt);
+    const e = c[Math.floor(rng() * c.length)];
+    used.add(e.id); main.push(e);
+  }
+  const subset = (arr, n) => {
+    let a = arr.filter(e => !used.has(e.id));
+    if (a.length < n) a = arr;
+    return a.map((e,i) => [rng(), i]).sort((x,y) => x[0]-y[0]).slice(0, n).map(x => x[1]).sort((x,y) => x-y).map(i => a[i]);
+  };
+  const warm = subset(EX.filter(e => e.cat === "warm"), 6);
+  const cool = subset(EX.filter(e => e.cat === "cool"), 4);
+  return {date, theme, title: theme.title + (changed ? " · jambes préservées" : ""), main, warm, cool,
+          rounds: opt.duration >= 20 ? 3 : 2};
+}
+function buildToday(){
+  const opt = {reroll:S.day.reroll, preserve:S.day.preserve, silent:S.silent, duration:S.duration};
+  const y = parseYmd(TODAY); y.setDate(y.getDate() - 1);
+  const prev = generate(ymd(y), {...opt, reroll:0, preserve:false});
+  return generate(TODAY, opt, new Set(prev.main.map(e => e.id)));
+}
+function buildSteps(p){
+  const st = [{kind:"prep", base:"prep", ex:p.warm[0], dur:T.prep}];
+  // exercice unilatéral : côté 1 → 5 s pour changer → côté 2
+  const add = (kind, e, extra) => {
+    if (!e.sw){ st.push({kind, base:kind, ex:e, dur:T[kind], ...extra}); return; }
+    const half = T[kind] / 2;
+    st.push({kind, base:kind, ex:e, dur:half, side:1, ...extra});
+    st.push({kind:"switch", base:kind, ex:e, dur:T.switch, ...extra});
+    st.push({kind, base:kind, ex:e, dur:half, side:2, ...extra});
+  };
+  p.warm.forEach((e,i) => add("warm", e, {pos:i+1, of:p.warm.length}));
+  for (let r = 1; r <= p.rounds; r++)
+    p.main.forEach((e,i) => {
+      const x = {round:r, rounds:p.rounds, pos:i+1, of:p.main.length};
+      st.push({kind:"rest", base:"rest", ex:e, dur:T.rest, ...x});
+      add("work", e, x);
+    });
+  p.cool.forEach((e,i) => add("cool", e, {pos:i+1, of:p.cool.length}));
+  return st;
+}
+
+/* ---------- accueil ---------- */
+let plan = null;
+function streak(){
+  const days = new Set(S.history.filter(h => h.done).map(h => h.date));
+  const d = parseYmd(TODAY); if (!days.has(TODAY)) d.setDate(d.getDate() - 1);
+  let n = 0; while (days.has(ymd(d))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function renderHome(){
+  plan = buildToday();
+  const total = buildSteps(plan).reduce((a,s) => a + s.dur, 0);
+  $("#hDate").textContent = parseYmd(TODAY).toLocaleDateString("fr-FR", {weekday:"long", day:"numeric", month:"long"});
+  const n = streak(); $("#hStreak").textContent = n ? "🔥 " + n + (n > 1 ? " jours" : " jour") : "";
+  $("#hTitle").textContent = plan.title;
+  $("#hMeta").textContent = Math.round(total/60) + " min · " + plan.main.length + " exercices × " + plan.rounds + " tours";
+  const doneToday = S.history.some(h => h.date === TODAY && h.done);
+  $("#hDone").innerHTML = doneToday ? '<span class="done-badge">✓ Séance du jour faite</span>' : "";
+  $("#startBtn").textContent = doneToday ? "Refaire une séance" : "Démarrer";
+  document.querySelectorAll("#segDur button").forEach(b => b.classList.toggle("sel", Number(b.dataset.d) === S.duration));
+  $("#cLegs").classList.toggle("sel", S.day.preserve);
+  $("#cSilent").classList.toggle("sel", S.silent);
+  $("#cVoice").classList.toggle("sel", S.voice);
+  const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  $("#hPlan").innerHTML =
+    `<div class="card"><h2><span>Échauffement</span><span>3 min</span></h2><div class="simple">${plan.warm.map(e => esc(e.name)).join(" · ")}</div></div>` +
+    `<div class="card"><h2><span>Circuit · ${plan.rounds} tours</span><span>${T.work} s / ${T.rest} s</span></h2>` +
+      plan.main.map((e,i) => `<div class="ex"><div class="n">${i+1}</div><div><div class="t">${esc(e.name)}${e.sw ? " <small>(2 côtés)</small>" : ""}</div><div class="c">${esc(e.cue)}</div></div></div>`).join("") +
+    `</div>` +
+    `<div class="card"><h2><span>Retour au calme</span><span>2 min</span></h2><div class="simple">${plan.cool.map(e => esc(e.name)).join(" · ")}</div></div>`;
+  $("#hHint").textContent = ("wakeLock" in navigator) ? "" :
+    "Astuce : si l'écran se met en veille pendant la séance, règle Réglages › Luminosité › Verrouillage auto sur « Jamais » le matin.";
+}
+document.querySelectorAll("#segDur button").forEach(b => b.onclick = () => { S.duration = Number(b.dataset.d); save(); renderHome(); });
+$("#cLegs").onclick   = () => { S.day.preserve = !S.day.preserve; save(); renderHome(); };
+$("#cSilent").onclick = () => { S.silent = !S.silent; save(); renderHome(); };
+$("#cVoice").onclick  = () => { S.voice = !S.voice; save(); renderHome(); };
+$("#reroll").onclick  = () => { S.day.reroll++; save(); renderHome(); window.scrollTo({top:0, behavior:"smooth"}); };
+
+/* ---------- son, voix, écran allumé ---------- */
+let actx = null, frVoice = null, wl = null;
+function unlockAudio(){
+  try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch(e) {}
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    actx.resume();
+    const b = actx.createBuffer(1, 1, 22050), s = actx.createBufferSource();
+    s.buffer = b; s.connect(actx.destination); s.start(0);
+  } catch(e) {}
+  try { if ("speechSynthesis" in window){ const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u); } } catch(e) {}
+}
+function beep(f = 880, d = .12, v = .3, delay = 0){
+  if (!S.beeps || !actx) return;
+  try {
+    const t = actx.currentTime + delay, o = actx.createOscillator(), g = actx.createGain();
+    o.type = "sine"; o.frequency.value = f;
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(v, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + d + .03);
+  } catch(e) {}
+}
+function pickVoice(){
+  const vs = speechSynthesis.getVoices();
+  frVoice = vs.find(v => /fr[-_]FR/i.test(v.lang) && /Thomas|Amélie|Audrey|Aurélie/i.test(v.name)) || vs.find(v => /^fr/i.test(v.lang)) || null;
+}
+if ("speechSynthesis" in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function say(t){
+  if (!S.voice || !("speechSynthesis" in window)) return;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = "fr-FR"; if (frVoice) u.voice = frVoice; u.rate = 1.05; speechSynthesis.speak(u); } catch(e) {}
+}
+async function lockOn(){ try { if ("wakeLock" in navigator && !wl) { wl = await navigator.wakeLock.request("screen"); wl.addEventListener("release", () => { wl = null; }); } } catch(e) {} }
+function lockOff(){ try { wl && wl.release(); } catch(e) {} wl = null; }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && run && !run.paused) lockOn(); });
+
+/* ---------- moteur de séance (basé sur l'heure réelle) ---------- */
+let run = null, ticker = null;
+const PH = {prep:"PRÉPARE-TOI", warm:"ÉCHAUFFEMENT", rest:"REPOS · PROCHAIN", work:"EFFORT", cool:"RETOUR AU CALME", switch:"CHANGE DE CÔTÉ"};
+function show(id){ document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === id)); }
+function startWorkout(){
+  unlockAudio(); lockOn();
+  const steps = buildSteps(plan);
+  run = {steps, i:0, end:Date.now() + steps[0].dur*1000/FAST, paused:false, left:0, beeped:null,
+         total:steps.reduce((a,s) => a + s.dur, 0), started:Date.now(), pausedMs:0, pauseAt:0};
+  show("run"); enterStep(); clearInterval(ticker); ticker = setInterval(tick, 100); tick();
+}
+function nextExName(i){
+  const st = run.steps, cur = st[i].ex.id;
+  for (let j = i+1; j < st.length; j++) if (st[j].ex.id !== cur) return st[j].ex.name;
+  return "fin de séance 🎉";
+}
+function enterStep(quiet){
+  const s = run.steps[run.i];
+  run.beeped = null;
+  const el = $("#run");
+  el.className = "screen on k-" + s.kind + (run.paused ? " paused" : "");
+  $("#rPhase").textContent = PH[s.kind];
+  $("#rName").textContent = s.ex.name;
+  $("#rCue").textContent = s.ex.cue;
+  const side = $("#rSide");
+  side.textContent = s.kind === "switch" ? "Côté 2 ensuite" : "Côté " + s.side;
+  side.classList.toggle("show", !!s.side || s.kind === "switch");
+  $("#rInfo").textContent =
+    s.base === "work" || s.base === "rest" ? `Circuit · tour ${s.round}/${s.rounds} · ${s.pos}/${s.of}` :
+    s.base === "warm" ? `Échauffement · ${s.pos}/${s.of}` :
+    s.base === "cool" ? `Retour au calme · ${s.pos}/${s.of}` : "C'est parti dans…";
+  $("#rNext").textContent = s.kind === "prep" ? "" : "Ensuite : " + (s.kind === "switch" ? "côté 2" : nextExName(run.i));
+  if (quiet) return;
+  const prev = run.steps[run.i - 1];
+  if (s.kind === "switch"){ beep(740,.15,.3); beep(740,.15,.3,.2); say("Change de côté"); }
+  else if (s.side === 2){ beep(988,.15,.35); beep(1319,.3,.35,.18); say("Côté 2 !"); }
+  else if (s.kind === "work"){ beep(988,.15,.35); beep(1319,.3,.35,.18); say(s.ex.name + " !"); }
+  else if (s.kind === "rest"){ beep(660,.3,.3); say((prev && prev.kind === "work" ? "Repos. " : "") + "Ensuite : " + s.ex.name); }
+  else if (s.kind === "prep"){ say("Prépare-toi. Échauffement : " + s.ex.name); }
+  else if (s.kind === "warm"){ beep(784,.2,.3); if (s.pos > 1) say(s.ex.name); }
+  else if (s.kind === "cool"){ beep(523,.3,.3); say((s.pos === 1 ? "Retour au calme. " : "") + s.ex.name); }
+}
+function tick(){
+  if (!run || run.paused) return;
+  const now = Date.now();
+  let skipped = 0;
+  while (now >= run.end){
+    run.i++;
+    if (run.i >= run.steps.length){ finish(); return; }
+    run.end += run.steps[run.i].dur*1000/FAST;
+    skipped++;
+  }
+  if (skipped) enterStep(now >= run.end - 500 && skipped > 1);
+  render(now);
+}
+function render(now){
+  const s = run.steps[run.i];
+  const leftMs = run.paused ? run.left : run.end - now;
+  const sec = Math.ceil(leftMs/1000*FAST);
+  $("#rTimer").textContent = fmt(sec);
+  if (!run.paused && sec <= 3 && sec >= 1 && run.beeped !== sec){ run.beeped = sec; beep(880,.1,.3); }
+  const doneSec = run.steps.slice(0, run.i).reduce((a,x) => a + x.dur, 0) + (s.dur - leftMs/1000*FAST);
+  $("#rBar").style.width = Math.min(100, doneSec / run.total * 100) + "%";
+}
+function togglePause(){
+  if (!run) return;
+  if (run.paused){ run.end = Date.now() + run.left; run.paused = false; run.pausedMs += Date.now() - run.pauseAt; lockOn(); }
+  else { run.left = run.end - Date.now(); run.paused = true; run.pauseAt = Date.now(); try { speechSynthesis.cancel(); } catch(e) {} }
+  $("#run").classList.toggle("paused", run.paused);
+  $("#bPause").textContent = run.paused ? "Reprendre" : "Pause";
+  $("#rPause").textContent = run.paused ? "EN PAUSE" : "";
+  render(Date.now());
+}
+function adjust(sec){
+  if (!run) return;
+  const ms = sec*1000/FAST;
+  if (run.paused) run.left = Math.max(1000/FAST, run.left + ms);
+  else run.end = Math.max(Date.now() + 1000/FAST, run.end + ms);
+  run.total += sec; render(Date.now());
+}
+function skip(){
+  if (!run) return;
+  run.i++;
+  if (run.i >= run.steps.length){ finish(); return; }
+  const d = run.steps[run.i].dur*1000/FAST;
+  if (run.paused) run.left = d; else run.end = Date.now() + d;
+  enterStep(); render(Date.now());
+}
+let quitTimer = null;
+function quit(){
+  const b = $("#quitBtn");
+  if (!b.classList.contains("armed")){
+    b.classList.add("armed"); b.textContent = "Confirmer ?";
+    quitTimer = setTimeout(() => { b.classList.remove("armed"); b.textContent = "Quitter"; }, 3000);
+    return;
+  }
+  clearTimeout(quitTimer); b.classList.remove("armed"); b.textContent = "Quitter";
+  stopRun(); show("home"); renderHome();
+}
+function stopRun(){
+  clearInterval(ticker); ticker = null; lockOff();
+  try { speechSynthesis.cancel(); } catch(e) {}
+  run = null;
+  $("#bPause").textContent = "Pause"; $("#rPause").textContent = "";
+}
+function finish(){
+  const realSec = Math.round((Date.now() - run.started - run.pausedMs)/1000*FAST);
+  S.history.push({date:TODAY, theme:plan.theme.id, title:plan.title, dur:realSec,
+                  ex:plan.main.map(e => e.id), rounds:plan.rounds, preserve:S.day.preserve, fb:null, done:true});
+  save(); stopRun();
+  beep(784,.15,.35); beep(988,.15,.35,.16); beep(1319,.4,.35,.32);
+  say("Séance terminée. Bravo !");
+  $("#eTime").textContent = fmt(realSec);
+  $("#eEx").textContent = plan.main.length + plan.warm.length + plan.cool.length;
+  $("#eStreak").textContent = "🔥 " + streak();
+  document.querySelectorAll("#fb button").forEach(b => b.classList.remove("sel"));
+  $("#thanks").textContent = "";
+  show("end");
+}
+$("#startBtn").onclick = startWorkout;
+$("#rTap").onclick = togglePause;
+$("#bPause").onclick = togglePause;
+$("#bMinus").onclick = () => adjust(-10);
+$("#bPlus").onclick = () => adjust(10);
+$("#bSkip").onclick = skip;
+$("#quitBtn").onclick = quit;
+document.querySelectorAll("#fb button").forEach(b => b.onclick = () => {
+  const last = S.history[S.history.length - 1]; if (last) { last.fb = b.dataset.f; save(); }
+  document.querySelectorAll("#fb button").forEach(x => x.classList.toggle("sel", x === b));
+  $("#thanks").textContent = "Noté ✓ — ça servira à ajuster les prochaines séances.";
+});
+$("#homeBtn").onclick = () => { show("home"); renderHome(); window.scrollTo(0,0); };
+
+renderHome();
+</script>
+</body>
+</html>

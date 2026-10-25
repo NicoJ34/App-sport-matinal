@@ -169,6 +169,9 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
   <div class="seg" id="segDur">
     <button data-d="15">15 min</button><button data-d="20">20 min</button>
   </div>
+  <div class="seg" id="segMode">
+    <button data-m="">Du jour</button><button data-m="full">Full body</button><button data-m="tabata">Tabata</button>
+  </div>
   <div class="chips">
     <button class="chip" id="cLegs">🦵 Préserver les jambes</button>
     <button class="chip" id="cSilent">🤫 Silencieux</button>
@@ -583,8 +586,10 @@ function pool(cat, opt){
   return p;
 }
 function generate(date, opt, exclude = new Set()){
-  const rng = rngFor(date + "|" + opt.reroll);
-  const theme = THEMES[parseYmd(date).getDay()];
+  const mode = opt.mode || "";
+  const rng = rngFor(date + "|" + opt.reroll + (mode ? "|" + mode : ""));
+  // choix du jour : séance prévue, ou Full body (pyramide) / Tabata à la demande
+  const theme = mode === "full" ? THEMES[3] : mode === "tabata" ? THEMES[5] : THEMES[parseYmd(date).getDay()];
   const format = theme.fmt, rounds = opt.duration >= 20 ? 3 : 2;
   const count = format === "tabata" ? 2 * rounds : 5;
   let slots = Array.from({length:count}, (_, i) => theme.slots[i % theme.slots.length]), changed = false;
@@ -611,9 +616,9 @@ function generate(date, opt, exclude = new Set()){
   return {date, theme, format, rounds, title: theme.title + (changed ? " · jambes préservées" : ""), main, warm, cool};
 }
 function buildToday(){
-  const opt = {reroll:S.day.reroll, preserve:S.day.preserve, silent:S.silent, duration:S.duration};
+  const opt = {reroll:S.day.reroll, preserve:S.day.preserve, silent:S.silent, duration:S.duration, mode:S.day.mode || ""};
   const y = parseYmd(TODAY); y.setDate(y.getDate() - 1);
-  const prev = generate(ymd(y), {...opt, reroll:0, preserve:false});
+  const prev = generate(ymd(y), {...opt, reroll:0, preserve:false, mode:""});
   return generate(TODAY, opt, new Set(prev.main.map(e => e.id)));
 }
 function buildSteps(p){
@@ -697,6 +702,7 @@ function renderHome(){
   $("#hDone").innerHTML = doneToday ? '<span class="done-badge">✓ Séance du jour faite</span>' : "";
   $("#startBtn").textContent = doneToday ? "Refaire une séance" : "Démarrer";
   document.querySelectorAll("#segDur button").forEach(b => b.classList.toggle("sel", Number(b.dataset.d) === S.duration));
+  document.querySelectorAll("#segMode button").forEach(b => b.classList.toggle("sel", b.dataset.m === (S.day.mode || "")));
   $("#cLegs").classList.toggle("sel", S.day.preserve);
   $("#cSilent").classList.toggle("sel", S.silent);
   $("#cVoice").classList.toggle("sel", S.voice);
@@ -708,6 +714,7 @@ function renderHome(){
     "Astuce : si l'écran se met en veille pendant la séance, règle Réglages › Luminosité › Verrouillage auto sur « Jamais » le matin.";
 }
 document.querySelectorAll("#segDur button").forEach(b => b.onclick = () => { S.duration = Number(b.dataset.d); save(); renderHome(); });
+document.querySelectorAll("#segMode button").forEach(b => b.onclick = () => { S.day.mode = b.dataset.m; save(); renderHome(); });
 $("#cLegs").onclick   = () => { S.day.preserve = !S.day.preserve; save(); renderHome(); };
 $("#cSilent").onclick = () => { S.silent = !S.silent; save(); renderHome(); };
 $("#cVoice").onclick  = () => { S.voice = !S.voice; save(); renderHome(); };

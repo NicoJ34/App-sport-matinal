@@ -16,6 +16,7 @@ App Raccourcis → Automatisation → **+** → Heure de la journée (ex. 6h45, 
 
 ## Utilisation
 - **15 / 20 min** : 2 ou 3 tours du circuit.
+- **Du jour / Full body / Tabata** : séance prévue pour le jour, ou au choix un Full body (pyramide) ou un Tabata — tous les jours, dimanche compris (choix valable pour la journée).
 - **🦵 Préserver les jambes** : pour aujourd'hui seulement (jour de course) → pas de squats, fentes, cardio.
 - **🤫 Silencieux** : aucun saut (mémorisé).
 - **🗣️ Voix** : annonces en français.
@@ -23,7 +24,7 @@ App Raccourcis → Automatisation → **+** → Heure de la journée (ex. 6h45, 
 - Pendant la séance : tap sur l'écran = pause, −10 / +10 s, ⏭ = passer, Quitter (2 taps).
 - Si tu n'entends rien : remonte le volume et désactive le mode silencieux de l'iPhone.
 
-## Formats et progression (v0.3)
+## Formats et progression
 - **Lun / Mar / Jeu / Dim : Circuit** — effort adaptatif (30 à 45 s) dans des créneaux de 60 s.
 - **Mer / Sam : Pyramide** — 30 → 45 s (→ 30 s en 20 min).
 - **Ven : Tabata** — blocs de 8 × (20 s / 10 s) en alternant 2 exercices.

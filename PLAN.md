@@ -202,17 +202,17 @@ Rotation par défaut (modifiable) :
 ## 9. Feuille de route
 
 ### v0.1 — MVP (1 soirée)
-- [ ] `index.html` unique : écran Accueil + écran Séance + écran Fin
-- [ ] ~25 exercices, niveau fixe, 1 format (circuit 40/20)
-- [ ] Générateur par jour de la semaine
-- [ ] Minuteur robuste (basé sur l'heure), bips, wake lock
-- [ ] Publication GitHub Pages → test sur l'iPhone
+- [x] `index.html` unique : écran Accueil + écran Séance + écran Fin
+- [x] ~25 exercices, niveau fixe, 1 format (circuit 40/20)
+- [x] Générateur par jour de la semaine
+- [x] Minuteur robuste (basé sur l'heure), bips, wake lock
+- [x] Publication GitHub Pages → test sur l'iPhone
 
 ### v0.2 — Vraie app
-- [ ] `manifest.json` + icône + `sw.js` (hors-ligne, plein écran)
-- [ ] Voix FR, pause / passer / ±10 s
-- [ ] Historique + série 🔥
-- [ ] Mode silencieux, choix 15/20 min
+- [x] `manifest.json` + icône + `sw.js` (hors-ligne, plein écran)
+- [x] Voix FR, pause / passer / ±10 s
+- [x] Historique + série 🔥
+- [x] Mode silencieux, choix 15/20 min
 
 ### v0.3 — Intelligent
 - [ ] ~50 exercices, 3 niveaux

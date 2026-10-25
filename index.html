@@ -463,6 +463,47 @@ const POSES = {
   pigeon:    {h:[55,33], n:[54,43], p:[52,64], a1:[[62,56],[68,71]], a2:[[60,56],[66,71]], l1:[[68,70],[56,72]], l2:[[36,70],[20,72]], fade:["a2"]},
 };
 
+/* Positions de fin de mouvement (pour l'animation) */
+const mvP = (P, f) => { const o = {...P}; for (const k of ["h","n","p"]) o[k] = f(P[k]); for (const k of ["a1","a2","l1","l2"]) o[k] = P[k].map(f); return o; };
+const mirrorP = P => mvP(P, ([x,y]) => [120 - x, y]);
+const swapP = (P, arms = true, legs = true) => ({...P, ...(arms ? {a1:P.a2, a2:P.a1} : {}), ...(legs ? {l1:P.l2, l2:P.l1} : {})});
+Object.assign(POSES, {
+  jumpup:      mvP(POSES.stand, ([x,y]) => [x, y - 7]),
+  standtoes:   {...mvP(POSES.stand, ([x,y]) => [x, y - 4]), l1:[[57,52],[56,71]], l2:[[63,52],[64,71]]},
+  sidelungeR:  mirrorP(POSES.sidelunge),
+  highknees2:  swapP(POSES.highknees),
+  deadbug2:    swapP(POSES.deadbug),
+  swim2:       swapP(POSES.swim),
+  kneepushdown:{h:[96,60], n:[86,63], p:[66,66], a1:[[77,61],[84,72]], a2:[[76,62],[82,72]], l1:[[52,70],[38,62]], l2:[[52,69],[38,61]]},
+  pikedown:    {h:[87,66], n:[80,60], p:[63,38], a1:[[77,66],[86,72]], a2:[[75,66],[84,72]], l1:[[55,54],[47,72]], l2:[[54,54],[45,72]]},
+  taptouch:    {...POSES.highplank, a1:[[80,57],[87,51]]},
+  proneback:   {...POSES.prone, a1:[[66,66],[56,66]], a2:[[66,67],[56,67]]},
+  quadhead:    {...POSES.quad, h:[88,60]},
+  hipout:      {...POSES.quad, l1:[[50,57],[36,54]]},
+  threaded:    {...POSES.quad, h:[84,64], n:[78,60], a1:[[74,68],[64,71]]},
+  frogback:    {...POSES.quad, h:[84,52], n:[76,56], p:[54,62], a1:[[80,64],[84,72]], a2:[[78,64],[82,72]]},
+  legswingback:{...POSES.legswing, l1:[[54,55],[46,69]]},
+  pikebent:    {...POSES.pike, l1:[[60,54],[52,68]]},
+  tuckout:     {...POSES.tuck, l1:[[54,52],[70,52]], l2:[[53,53],[69,53]]},
+  sumoup:      {h:[60,10], n:[60,20], p:[60,41], a1:[[52,29],[59,36]], a2:[[68,29],[61,36]], l1:[[48,57],[42,72]], l2:[[72,57],[78,72]], sym:true},
+  bridgedown:  {...POSES.bridge, p:[50,67], l1:[[64,54],[68,71]], l2:[[63,55],[67,71]]},
+  bridge1down: {...POSES.bridge1, p:[50,67], l1:[[64,58],[80,52]], l2:[[64,55],[68,71]]},
+});
+/* Mouvement : exercice → [position de fin, durée d'un aller-retour en s, (position de fin au niveau 1)] */
+const MOVE = {
+  pushup:["pushdown",1.8,"kneepushdown"], diamond:["pushdown",1.8,"kneepushdown"], wide:["pushdown",1.8,"kneepushdown"],
+  pike:["pikedown",1.8], hindu:["cobra",2.2], updown:["highplank",1.8], taps:["taptouch",1.2,null],
+  ytw:["pronepull",2], snow:["proneback",2.4], suppull:["prone",1.8], birddog:["quad",2], swim:["swim2",0.9],
+  squat:["stand",1.8], revlunge:["stand",2], bridge:["bridgedown",1.8], slbridge:["bridge1down",1.8],
+  latlunge:["sidelungeR",2.4], sumo:["sumoup",1.4], calves:["standtoes",1.4], jsquat:["jumpup",1.2],
+  deadbug:["deadbug2",2.4], climb:["highplank",0.8], revcrunch:["tuckout",1.8],
+  jacks:["stand",0.8], stepjack:["stand",1.2], burpee:["highplank",1.6], burpeeq:["highplank",2],
+  knees:["highknees2",0.6], march:["highknees2",1], skater:["stand",1], skaterq:["stand",1.4],
+  arms:["armsup",1.6], catcow:["quadhead",3], hipcirc:["hipout",2], thoracic:["quad",2.4], inchworm:["pike",3],
+  dogcobra:["cobra",3], wgs:["lowlunge",3], legswing:["legswingback",1.6],
+  cossack:["sidelungeR",3], dogpedal:["pikebent",1.6], frog:["frogback",3], scorpion:["prone",3], thread:["threaded",3],
+};
+
 /* Exercice → pose (et pose du niveau 1 quand elle diffère) */
 const PIC = {
   pushup:["highplank","kneepush"], pike:"pike", diamond:["highplank","kneepush"], hindu:"pike", wide:["highplank","kneepush"],
@@ -479,18 +520,27 @@ const PIC = {
   child:"child", pigeon:"pigeon", hams:"seated", quad:"sidelying", twist:"twist", cobra:"cobra", butterfly:"butterfly", baby:"baby",
 };
 
-function poseSVG(name, cls){
-  const P = POSES[name]; if (!P) return "";
+const REDUCE_MOTION = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+function posePaths(P, fade){
   const seg = (a, j) => `M${a[0]} ${a[1]}L${j[0][0]} ${j[0][1]}L${j[1][0]} ${j[1][1]}`;
-  const fade = P.sym ? [] : (P.fade || ["a2","l2"]);
   const limbs = {a1:[P.n,P.a1], a2:[P.n,P.a2], l1:[P.p,P.l1], l2:[P.p,P.l2]};
   let near = `M${P.n[0]} ${P.n[1]}L${P.p[0]} ${P.p[1]}`, far = "";
-  for (const k in limbs){ const [o, j] = limbs[k]; if (!j) continue; if (fade.includes(k)) far += seg(o, j); else near += seg(o, j); }
+  for (const k in limbs){ const [o, j] = limbs[k]; if (fade.includes(k)) far += seg(o, j); else near += seg(o, j); }
+  return {near, far};
+}
+// name2 + dur : la figure va et vient en boucle entre les deux positions
+function poseSVG(name, cls, name2, dur){
+  const A = POSES[name]; if (!A) return "";
+  const B = name2 && !REDUCE_MOTION ? POSES[name2] : null;
+  const fade = A.sym ? [] : (A.fade || ["a2","l2"]);
+  const pa = posePaths(A, fade), pb = B ? posePaths(B, fade) : null;
+  const an = (attr, a, b) => B ? `<animate attributeName="${attr}" values="${a};${b};${a}" dur="${dur || 1.8}s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines=".45 0 .55 1;.45 0 .55 1"/>` : "";
   return `<svg class="${cls||"pic"}" viewBox="0 0 120 80" aria-hidden="true">` +
     `<line x1="6" y1="74.5" x2="114" y2="74.5" stroke="currentColor" stroke-width="2" opacity=".3" stroke-linecap="round"/>` +
     `<g fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">` +
-    (far ? `<path d="${far}" opacity=".42"/>` : "") + `<path d="${near}"/></g>` +
-    `<circle cx="${P.h[0]}" cy="${P.h[1]}" r="6.5" fill="currentColor"/></svg>`;
+    (pa.far ? `<path d="${pa.far}" opacity=".42">${an("d", pa.far, pb && pb.far)}</path>` : "") +
+    `<path d="${pa.near}">${an("d", pa.near, pb && pb.near)}</path></g>` +
+    `<circle cx="${A.h[0]}" cy="${A.h[1]}" r="6.5" fill="currentColor">${B ? an("cx", A.h[0], B.h[0]) + an("cy", A.h[1], B.h[1]) : ""}</circle></svg>`;
 }
 
 
@@ -539,7 +589,11 @@ const nm = e => { const l = lvOf(e); return l === 1 ? e.l1[0] : l === 3 ? e.l3[0
 const cu = e => { const l = lvOf(e); return l === 1 ? e.l1[1] : l === 3 ? e.l3[1] : e.cue; };
 function picOf(e, cls){
   const m = PIC[e.id]; if (!m) return "";
-  return poseSVG(Array.isArray(m) ? (lvOf(e) === 1 && m[1] ? m[1] : m[0]) : m, cls);
+  const l1 = Array.isArray(m) && lvOf(e) === 1 && m[1];
+  const base = l1 ? m[1] : Array.isArray(m) ? m[0] : m;
+  const mv = MOVE[e.id];
+  const end = !mv ? null : l1 ? (mv.length > 2 ? mv[2] : mv[0]) : mv[0];
+  return poseSVG(base, cls, end, mv && mv[1]);
 }
 const workOf = e => Math.min(WORK_MAX, Math.max(WORK_MIN, P(e.id).work));
 

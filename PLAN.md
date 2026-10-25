@@ -215,11 +215,11 @@ Rotation par défaut (modifiable) :
 - [x] Mode silencieux, choix 15/20 min
 
 ### v0.3 — Intelligent
-- [ ] ~50 exercices, 3 niveaux
-- [ ] Feedback de fin → progression adaptative
-- [ ] Formats EMOM / Tabata / Pyramide
-- [ ] Mode « Préserver les jambes » (manuel + jours de course auto)
-- [ ] Export / import JSON
+- [x] ~60 exercices, 3 niveaux (exercices principaux)
+- [x] Feedback de fin → progression adaptative + bouton « version plus facile » en séance
+- [x] Formats Tabata (ven.) / Pyramide (mer., sam.) / Circuit adaptatif (autres jours) — EMOM écarté : demande de compter des répétitions
+- [x] Mode « Préserver les jambes » (manuel, pour la journée) — auto par jour de course : à faire
+- [x] Export / import JSON + suppression d'une séance + remise à zéro des niveaux
 
 ### v0.4 — Confort
 - [ ] Automatisation Raccourcis iOS du matin

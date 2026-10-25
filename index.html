@@ -405,7 +405,7 @@ const THEMES = {
   0:{id:"mobility",   title:"Mobilité & récupération",  fmt:"circuit", slots:["mob","mob","core","mob","mob"]},
 };
 const FMT_NAME = {circuit:"Circuit", pyramid:"Pyramide", tabata:"Tabata"};
-const T = {prep:10, warm:30, cool:30, switch:5, slot:60, tabWork:20, tabRest:10, tabBreak:60};
+const T = {prep:10, warm:30, cool:30, switch:5, trans:3, slot:60, tabWork:20, tabRest:10, tabBreak:60};
 const PYR = {2:[30,45], 3:[30,45,30]};          // secondes d'effort par tour (pyramide)
 const WORK_MIN = 30, WORK_MAX = 45, WORK_DEF = 40; // circuit : effort adaptatif, repos = 60 − effort
 
@@ -525,7 +525,13 @@ function buildSteps(p){
     st.push({kind:"switch", base:kind, ex:e, dur:T.switch, ...extra});
     st.push({kind, base:kind, ex:e, dur:dur - half, side:2, ...extra});
   };
-  p.warm.forEach((e,i) => add("warm", e, T.warm, {info:`Échauffement · ${i+1}/${p.warm.length}`}));
+  // 3 s de transition entre deux exercices d'échauffement / de retour au calme
+  const trans = (base, e, info) => st.push({kind:"trans", base, ex:e, dur:T.trans, info});
+  p.warm.forEach((e,i) => {
+    const info = `Échauffement · ${i+1}/${p.warm.length}`;
+    if (i > 0) trans("warm", e, info);
+    add("warm", e, T.warm, {info});
+  });
   if (p.format === "tabata"){
     for (let b = 0; b < p.rounds; b++){
       const A = p.main[2*b], B = p.main[2*b+1];
@@ -546,7 +552,11 @@ function buildSteps(p){
         add("work", e, w, {info});
       });
   }
-  p.cool.forEach((e,i) => add("cool", e, T.cool, {info:`Retour au calme · ${i+1}/${p.cool.length}`}));
+  p.cool.forEach((e,i) => {
+    const info = `Retour au calme · ${i+1}/${p.cool.length}`;
+    trans("cool", e, info);
+    add("cool", e, T.cool, {info});
+  });
   return st;
 }
 
@@ -638,7 +648,7 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 
 /* ---------- moteur de séance (basé sur l'heure réelle) ---------- */
 let run = null, ticker = null, lastRun = null;
-const PH = {prep:"PRÉPARE-TOI", warm:"ÉCHAUFFEMENT", rest:"REPOS · PROCHAIN", work:"EFFORT", cool:"RETOUR AU CALME", switch:"CHANGE DE CÔTÉ"};
+const PH = {prep:"PRÉPARE-TOI", warm:"ÉCHAUFFEMENT", rest:"REPOS · PROCHAIN", work:"EFFORT", cool:"RETOUR AU CALME", switch:"CHANGE DE CÔTÉ", trans:"ENSUITE"};
 function show(id){ document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === id)); }
 function startWorkout(){
   unlockAudio(); lockOn();
@@ -655,7 +665,7 @@ function nextExName(i){
 function enterStep(quiet){
   const s = run.steps[run.i];
   run.beeped = null;
-  $("#run").className = "screen on k-" + s.kind + (run.paused ? " paused" : "");
+  $("#run").className = "screen on k-" + (s.kind === "trans" ? s.base : s.kind) + (run.paused ? " paused" : "");
   $("#rPhase").textContent = s.endBlock ? "FIN DU BLOC" : PH[s.kind];
   $("#rName").textContent = s.endBlock ? "Respire" : nm(s.ex) + (s.pair ? " + " + nm(s.pair) : "");
   $("#rCue").textContent = s.endBlock ? "" : s.pair ? "Alterne A et B : 20 s d'effort, 10 s de repos, 8 fois." : cu(s.ex);
@@ -663,7 +673,7 @@ function enterStep(quiet){
   const l = lvOf(s.ex);
   $("#rLv").textContent = l && (s.kind === "work" || (s.kind === "rest" && !s.endBlock)) && !s.pair ? "Niveau " + l : "";
   $("#rInfo").textContent = s.info || "C'est parti dans…";
-  $("#rNext").textContent = s.kind === "prep" ? "" : "Ensuite : " + (s.kind === "switch" ? "côté 2" : s.pair ? nm(s.ex) : nextExName(run.i));
+  $("#rNext").textContent = s.kind === "prep" || s.kind === "trans" ? "" : "Ensuite : " + (s.kind === "switch" ? "côté 2" : s.pair ? nm(s.ex) : nextExName(run.i));
   $("#rEasier").classList.toggle("show", hasLv(s.ex) && l > 1 && (s.kind === "work" || s.kind === "rest") && !s.endBlock && !s.pair);
   if (quiet) return;
   const prev = run.steps[run.i - 1];
@@ -674,8 +684,9 @@ function enterStep(quiet){
   else if (s.kind === "rest" && s.pair){ beep(660,.3,.3); say("Tabata. " + nm(s.ex) + " et " + nm(s.pair)); }
   else if (s.kind === "rest"){ beep(660,.3,.3); say((prev && prev.kind === "work" ? "Repos. " : "") + "Ensuite : " + nm(s.ex)); }
   else if (s.kind === "prep"){ say("Prépare-toi. Échauffement : " + s.ex.name); }
-  else if (s.kind === "warm"){ beep(784,.2,.3); if (!prev || prev.ex.id !== s.ex.id) { if (prev && prev.kind !== "prep") say(s.ex.name); } }
-  else if (s.kind === "cool"){ beep(523,.3,.3); if (!prev || prev.ex.id !== s.ex.id) say((prev && prev.kind !== "cool" && prev.kind !== "switch" ? "Retour au calme. " : "") + s.ex.name); }
+  else if (s.kind === "trans"){ beep(600,.15,.25); say((s.base === "cool" && prev && prev.base !== "cool" ? "Retour au calme. " : "") + s.ex.name); }
+  else if (s.kind === "warm"){ beep(784,.2,.3); }
+  else if (s.kind === "cool"){ beep(523,.3,.3); }
 }
 function tick(){
   if (!run || run.paused) return;

@@ -103,6 +103,17 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
 .sbtn.armed{background:var(--danger);color:#fff}
 .msg{font-size:13.5px;color:var(--ok);min-height:18px;margin-top:8px;text-align:center}
 
+.ex .hp{width:64px;height:auto;color:var(--accent);flex:none;margin-left:auto;align-self:center}
+.mrow{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:10px;padding:5px 0;font-size:14px}
+.mrow .ml2{text-transform:capitalize;color:var(--muted)}
+.mrow.cur .ml2{color:var(--text);font-weight:700}
+.mbar{height:12px;background:var(--chip);border-radius:6px;overflow:hidden}
+.mbar i{display:block;height:100%;background:var(--accent);border-radius:6px}
+.mv{color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px;white-space:nowrap;min-width:96px;text-align:right}
+.subh{font-size:13px;font-weight:600;color:var(--muted);margin:12px 0 2px}
+.split{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.pill{background:var(--chip);border-radius:99px;padding:5px 11px;font-size:13.5px}
+
 /* ---------- Séance ---------- */
 #run{position:fixed;inset:0;color:#fff;background:var(--work);transition:background-color .35s ease;
   padding:calc(env(safe-area-inset-top) + 10px) 16px calc(env(safe-area-inset-bottom) + 14px)}
@@ -115,6 +126,7 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
 .quit{height:36px;padding:0 14px;border-radius:99px;background:rgba(255,255,255,.18);font-size:14px;font-weight:600;flex:none}
 .quit.armed{background:#fff;color:#c0392b}
 .rmain{flex:1;display:flex;flex-direction:column;justify-content:center;text-align:center;min-height:0}
+.rp{display:block;width:min(46vw,180px);height:auto;margin:0 auto 4px;color:#fff}
 .phase{font-size:15px;font-weight:700;letter-spacing:2px;opacity:.85}
 .exname{font-size:clamp(28px,8.5vw,40px);font-weight:800;line-height:1.08;margin:8px 0 8px;letter-spacing:-.5px}
 .cue{font-size:17px;line-height:1.35;opacity:.92;max-width:420px;margin:0 auto;min-height:46px}
@@ -170,7 +182,7 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
 
 <!-- ===== Suivi ===== -->
 <section id="hist" class="screen">
-  <div class="htop"><button class="back" id="histBack">‹ Retour</button><span class="ver">Callistenik v0.3</span></div>
+  <div class="htop"><button class="back" id="histBack">‹ Retour</button><span class="ver">Callistenik v0.4</span></div>
   <h1>Suivi</h1>
   <div class="statgrid">
     <div class="stat"><b id="sMonth">0</b><span>séances ce mois</span></div>
@@ -178,6 +190,8 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
     <div class="stat"><b id="sStreak">0</b><span>série actuelle</span></div>
     <div class="stat"><b id="sBest">0</b><span>meilleure série</span></div>
   </div>
+  <div class="card"><h2><span>Mois par mois</span></h2><div id="mBars"></div>
+    <div class="subh">Ce mois-ci</div><div class="split" id="mSplit"></div></div>
   <div class="card"><h2><button class="nav" id="mPrev" aria-label="Mois précédent">‹</button><span class="ml" id="mLabel"></span><button class="nav" id="mNext" aria-label="Mois suivant">›</button></h2><div class="cal" id="cal"></div></div>
   <div class="card"><h2><span>Dernières séances</span></h2><div id="hList"></div></div>
   <div class="card"><h2><span>Progression</span></h2><div id="pList"></div></div>
@@ -200,6 +214,7 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
 <section id="run" class="screen">
   <div class="rtop"><span id="rInfo"></span><button class="quit" id="quitBtn">Quitter</button></div>
   <div class="rmain" id="rTap">
+    <div id="rPic"></div>
     <div class="phase" id="rPhase"></div>
     <div class="exname" id="rName"></div>
     <div class="cue" id="rCue"></div>
@@ -394,6 +409,88 @@ const EX = [
 ].map(e => ({tags:[], sw:false, ...e}));
 const EXBY = Object.fromEntries(EX.map(e => [e.id, e]));
 
+/* =========================================================
+   Pictogrammes — bonhommes en traits (viewBox 120 × 80, sol à y = 72)
+   h = tête, n = épaules, p = bassin
+   a1/a2 = bras [coude, main], l1/l2 = jambes [genou, pied]
+   a2/l2 sont dessinés en estompé (côté éloigné) sauf si sym:true
+   fade : liste explicite des membres estompés (remplace le défaut)
+   ========================================================= */
+const POSES = {
+  stand:     {h:[60,10], n:[60,19], p:[60,40], a1:[[55,30],[53,40]], a2:[[65,30],[67,40]], l1:[[57,56],[56,72]], l2:[[63,56],[64,72]], sym:true},
+  armsup:    {h:[60,10], n:[60,19], p:[60,40], a1:[[51,12],[45,3]],  a2:[[69,12],[75,3]],  l1:[[53,56],[47,72]], l2:[[67,56],[73,72]], sym:true},
+  armsout:   {h:[60,10], n:[60,19], p:[60,40], a1:[[48,19],[37,19]], a2:[[72,19],[83,19]], l1:[[57,56],[56,72]], l2:[[63,56],[64,72]], sym:true},
+  squat:     {h:[66,28], n:[61,37], p:[50,56], a1:[[73,38],[85,38]], a2:[[72,40],[84,40]], l1:[[67,55],[66,72]], l2:[[65,56],[63,72]]},
+  sumo:      {h:[60,19], n:[60,29], p:[60,50], a1:[[52,38],[59,45]], a2:[[68,38],[61,45]], l1:[[44,58],[42,72]], l2:[[76,58],[78,72]], sym:true},
+  deepsquat: {h:[60,27], n:[60,37], p:[60,58], a1:[[50,47],[58,44]], a2:[[70,47],[62,44]], l1:[[44,52],[48,72]], l2:[[76,52],[72,72]], sym:true},
+  sidelunge: {h:[57,23], n:[56,33], p:[52,54], a1:[[50,43],[56,49]], a2:[[62,43],[57,49]], l1:[[36,58],[32,72]], l2:[[70,63],[88,72]], sym:true},
+  lunge:     {h:[57,21], n:[57,31], p:[56,52], a1:[[57,42],[61,50]], a2:[[56,42],[59,51]], l1:[[71,57],[71,72]], l2:[[49,67],[34,71]]},
+  lowlunge:  {h:[54,24], n:[54,34], p:[53,55], a1:[[54,45],[57,54]], a2:[[53,45],[55,55]], l1:[[68,58],[68,72]], l2:[[42,71],[26,72]]},
+  wgs:       {h:[66,36], n:[60,44], p:[50,58], a1:[[60,32],[60,20]], a2:[[66,56],[70,72]], l1:[[66,59],[67,72]], l2:[[40,71],[24,72]]},
+  highknees: {h:[60,10], n:[60,19], p:[60,40], a1:[[55,29],[50,37]], a2:[[65,27],[71,21]], l1:[[76,41],[73,56]], l2:[[60,56],[60,72]], fade:["a2","l2"]},
+  legswing:  {h:[59,10], n:[59,19], p:[59,40], a1:[[55,29],[52,38]], a2:[[63,29],[66,38]], l1:[[67,55],[75,69]], l2:[[59,56],[59,72]]},
+  plank:     {h:[94,55], n:[84,59], p:[63,63], a1:[[84,71],[96,71]], a2:[[81,71],[93,71]], l1:[[47,67],[31,71]], l2:[[47,66],[31,70]]},
+  sideplank: {h:[93,54], n:[84,58], p:[62,63], a1:[[84,71],[96,71]], a2:[[84,46],[84,34]], l1:[[45,67],[28,71]], l2:[[45,66],[28,70]], fade:["l2"]},
+  highplank: {h:[95,46], n:[86,50], p:[66,57], a1:[[86,61],[86,72]], a2:[[84,61],[84,72]], l1:[[50,63],[34,69]], l2:[[50,62],[34,68]]},
+  pushdown:  {h:[97,61], n:[87,64], p:[66,66], a1:[[77,61],[85,72]], a2:[[76,62],[83,72]], l1:[[50,68],[34,70]], l2:[[50,67],[34,69]]},
+  kneepush:  {h:[93,46], n:[84,50], p:[66,59], a1:[[84,61],[84,72]], a2:[[82,61],[82,72]], l1:[[52,70],[38,62]], l2:[[52,69],[38,61]]},
+  climber:   {h:[95,46], n:[86,50], p:[66,57], a1:[[86,61],[86,72]], a2:[[84,61],[84,72]], l1:[[80,64],[66,69]], l2:[[50,63],[34,69]]},
+  pike:      {h:[83,59], n:[78,52], p:[63,36], a1:[[82,62],[86,72]], a2:[[80,62],[84,72]], l1:[[55,53],[47,72]], l2:[[54,53],[45,72]]},
+  cobra:     {h:[86,45], n:[78,54], p:[58,67], a1:[[79,63],[80,72]], a2:[[77,63],[78,72]], l1:[[42,70],[26,71]], l2:[[42,69],[26,70]]},
+  quad:      {h:[91,47], n:[82,52], p:[61,55], a1:[[82,62],[82,72]], a2:[[80,62],[80,72]], l1:[[61,71],[45,71]], l2:[[59,71],[43,71]]},
+  quadarm:   {h:[91,47], n:[82,52], p:[61,55], a1:[[82,41],[82,30]], a2:[[80,62],[80,72]], l1:[[61,71],[45,71]], l2:[[59,71],[43,71]], fade:["a2","l2"]},
+  birddog:   {h:[91,47], n:[82,52], p:[61,55], a1:[[93,50],[104,48]], a2:[[80,62],[80,72]], l1:[[45,53],[29,51]], l2:[[61,71],[45,71]], fade:["a2","l2"]},
+  bear:      {h:[91,47], n:[82,52], p:[61,53], a1:[[82,62],[82,72]], a2:[[80,62],[80,72]], l1:[[63,65],[47,71]], l2:[[61,65],[45,71]]},
+  child:     {h:[70,65], n:[60,61], p:[40,58], a1:[[73,70],[86,71]], a2:[[72,69],[85,70]], l1:[[56,70],[40,71]], l2:[[55,69],[39,70]]},
+  prone:     {h:[86,62], n:[76,66], p:[54,69], a1:[[88,61],[99,57]], a2:[[87,62],[98,58]], l1:[[38,68],[22,64]], l2:[[38,67],[22,63]]},
+  pronepull: {h:[86,62], n:[76,66], p:[54,69], a1:[[66,59],[76,57]], a2:[[66,60],[75,58]], l1:[[38,69],[22,68]], l2:[[38,68],[22,67]]},
+  swim:      {h:[86,62], n:[76,66], p:[54,69], a1:[[88,61],[99,57]], a2:[[87,65],[98,66]], l1:[[38,66],[22,60]], l2:[[38,69],[22,70]]},
+  scorpion:  {h:[86,63], n:[76,67], p:[54,69], a1:[[86,70],[97,70]], a2:[[85,70],[96,70]], l1:[[40,62],[52,49]], l2:[[38,70],[22,70]]},
+  revplank:  {h:[23,46], n:[30,51], p:[51,58], a1:[[30,62],[30,72]], a2:[[32,62],[32,72]], l1:[[69,64],[88,71]], l2:[[69,63],[88,70]]},
+  bridge:    {h:[21,66], n:[32,68], p:[50,57], a1:[[42,71],[54,71]], a2:[[42,70],[54,70]], l1:[[66,52],[68,71]], l2:[[65,53],[67,71]]},
+  bridge1:   {h:[21,66], n:[32,68], p:[50,57], a1:[[42,71],[54,71]], a2:[[42,70],[54,70]], l1:[[65,49],[80,42]], l2:[[66,52],[68,71]]},
+  deadbug:   {h:[20,66], n:[30,69], p:[52,69], a1:[[30,57],[30,46]], a2:[[22,61],[13,55]], l1:[[52,53],[68,53]], l2:[[68,65],[84,61]]},
+  hollow:    {h:[27,57], n:[36,62], p:[56,69], a1:[[25,58],[14,54]], a2:[[25,59],[14,55]], l1:[[72,64],[88,59]], l2:[[72,65],[88,60]]},
+  tuck:      {h:[24,67], n:[34,69], p:[54,67], a1:[[44,71],[56,71]], a2:[[44,70],[56,70]], l1:[[56,50],[70,46]], l2:[[55,51],[69,47]]},
+  baby:      {h:[24,67], n:[34,69], p:[54,68], a1:[[46,56],[60,43]], a2:[[45,57],[59,44]], l1:[[58,52],[64,39]], l2:[[57,53],[63,40]]},
+  twist:     {h:[20,66], n:[30,69], p:[52,69], a1:[[22,62],[12,57]], a2:[[22,63],[12,58]], l1:[[64,57],[58,70]], l2:[[68,69],[84,69]]},
+  sidelying: {h:[20,62], n:[30,66], p:[52,68], a1:[[46,61],[57,57]], a2:[[24,58],[16,52]], l1:[[68,68],[58,56]], l2:[[68,70],[84,70]]},
+  seated:    {h:[65,48], n:[56,53], p:[38,68], a1:[[64,60],[72,66]], a2:[[63,61],[71,67]], l1:[[55,69],[72,70]], l2:[[55,68],[72,69]]},
+  butterfly: {h:[60,35], n:[60,45], p:[60,66], a1:[[54,55],[57,67]], a2:[[66,55],[63,67]], l1:[[44,62],[57,70]], l2:[[76,62],[63,70]], sym:true},
+  pigeon:    {h:[55,33], n:[54,43], p:[52,64], a1:[[62,56],[68,71]], a2:[[60,56],[66,71]], l1:[[68,70],[56,72]], l2:[[36,70],[20,72]], fade:["a2"]},
+};
+
+/* Exercice → pose (et pose du niveau 1 quand elle diffère) */
+const PIC = {
+  pushup:["highplank","kneepush"], pike:"pike", diamond:["highplank","kneepush"], hindu:"pike", wide:["highplank","kneepush"],
+  updown:"plank", taps:["highplank","kneepush"],
+  ytw:"prone", snow:"prone", suppull:"pronepull", revplank:"revplank", birddog:"birddog", swim:"swim",
+  squat:"squat", revlunge:"lunge", bridge:"bridge", slbridge:"bridge1", hold90:"squat", latlunge:"sidelunge",
+  sumo:"sumo", calves:"stand", jsquat:"squat",
+  plank:"plank", side:"sideplank", hollow:"hollow", deadbug:"deadbug", climb:"climber", bear:"bear", revcrunch:"tuck",
+  jacks:"armsup", stepjack:"armsup", burpee:"highplank", burpeeq:"highplank", knees:"highknees", march:"highknees",
+  skater:"lunge", skaterq:"lunge",
+  arms:"armsout", catcow:"quad", hipcirc:"quad", thoracic:"quadarm", inchworm:"pike", dogcobra:"pike", wgs:"wgs",
+  deepsq:"deepsquat", legswing:"legswing",
+  cossack:"sidelunge", lowlunge:"lowlunge", dogpedal:"pike", frog:"quad", scorpion:"scorpion", thread:"quad",
+  child:"child", pigeon:"pigeon", hams:"seated", quad:"sidelying", twist:"twist", cobra:"cobra", butterfly:"butterfly", baby:"baby",
+};
+
+function poseSVG(name, cls){
+  const P = POSES[name]; if (!P) return "";
+  const seg = (a, j) => `M${a[0]} ${a[1]}L${j[0][0]} ${j[0][1]}L${j[1][0]} ${j[1][1]}`;
+  const fade = P.sym ? [] : (P.fade || ["a2","l2"]);
+  const limbs = {a1:[P.n,P.a1], a2:[P.n,P.a2], l1:[P.p,P.l1], l2:[P.p,P.l2]};
+  let near = `M${P.n[0]} ${P.n[1]}L${P.p[0]} ${P.p[1]}`, far = "";
+  for (const k in limbs){ const [o, j] = limbs[k]; if (!j) continue; if (fade.includes(k)) far += seg(o, j); else near += seg(o, j); }
+  return `<svg class="${cls||"pic"}" viewBox="0 0 120 80" aria-hidden="true">` +
+    `<line x1="6" y1="74.5" x2="114" y2="74.5" stroke="currentColor" stroke-width="2" opacity=".3" stroke-linecap="round"/>` +
+    `<g fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">` +
+    (far ? `<path d="${far}" opacity=".42"/>` : "") + `<path d="${near}"/></g>` +
+    `<circle cx="${P.h[0]}" cy="${P.h[1]}" r="6.5" fill="currentColor"/></svg>`;
+}
+
+
 /* Thèmes et formats de la semaine (0 = dimanche) */
 const THEMES = {
   1:{id:"push_core",  title:"Poussée + gainage",        fmt:"circuit", slots:["push","core","push","core","pull"]},
@@ -437,6 +534,10 @@ function setP(id, p){ S.prog[id] = p; }
 const lvOf = e => hasLv(e) ? P(e.id).lv : 0;
 const nm = e => { const l = lvOf(e); return l === 1 ? e.l1[0] : l === 3 ? e.l3[0] : e.name; };
 const cu = e => { const l = lvOf(e); return l === 1 ? e.l1[1] : l === 3 ? e.l3[1] : e.cue; };
+function picOf(e, cls){
+  const m = PIC[e.id]; if (!m) return "";
+  return poseSVG(Array.isArray(m) ? (lvOf(e) === 1 && m[1] ? m[1] : m[0]) : m, cls);
+}
 const workOf = e => Math.min(WORK_MAX, Math.max(WORK_MIN, P(e.id).work));
 
 // Ajuste la progression après le ressenti de fin de séance. Retourne la liste des changements.
@@ -570,7 +671,7 @@ function streak(){
 }
 function exRow(e, n, extra){
   const l = lvOf(e);
-  return `<div class="ex"><div class="n">${n}</div><div><div class="t">${esc(nm(e))}${l ? `<span class="lvl">niv. ${l}</span>` : ""}${e.sw ? " <small>(2 côtés)</small>" : ""}${extra ? ` <small>${extra}</small>` : ""}</div><div class="c">${esc(cu(e))}</div></div></div>`;
+  return `<div class="ex"><div class="n">${n}</div><div><div class="t">${esc(nm(e))}${l ? `<span class="lvl">niv. ${l}</span>` : ""}${e.sw ? " <small>(2 côtés)</small>" : ""}${extra ? ` <small>${extra}</small>` : ""}</div><div class="c">${esc(cu(e))}</div></div>${picOf(e, "hp")}</div>`;
 }
 function mainCard(p){
   if (p.format === "tabata"){
@@ -666,6 +767,7 @@ function enterStep(quiet){
   const s = run.steps[run.i];
   run.beeped = null;
   $("#run").className = "screen on k-" + (s.kind === "trans" ? s.base : s.kind) + (run.paused ? " paused" : "");
+  $("#rPic").innerHTML = s.endBlock ? "" : picOf(s.ex, "rp");
   $("#rPhase").textContent = s.endBlock ? "FIN DU BLOC" : PH[s.kind];
   $("#rName").textContent = s.endBlock ? "Respire" : nm(s.ex) + (s.pair ? " + " + nm(s.pair) : "");
   $("#rCue").textContent = s.endBlock ? "" : s.pair ? "Alterne A et B : 20 s d'effort, 10 s de repos, 8 fois." : cu(s.ex);
@@ -815,6 +917,27 @@ function renderHist(){
   $("#sMin").textContent = Math.round(month.reduce((a,h) => a + (h.dur || 0), 0) / 60);
   $("#sStreak").textContent = streak();
   $("#sBest").textContent = bestStreak();
+  // mois par mois (6 derniers mois)
+  const months = [];
+  for (let k = 5; k >= 0; k--){
+    const d = new Date(t.getFullYear(), t.getMonth() - k, 1), key = ymd(d).slice(0,7);
+    const hs = done.filter(h => h.date.startsWith(key));
+    months.push({label:d.toLocaleDateString("fr-FR", {month:"short"}).replace(".",""), n:hs.length,
+                 min:Math.round(hs.reduce((a,h) => a + (h.dur || 0), 0) / 60), cur:k === 0});
+  }
+  const mx = Math.max(1, ...months.map(m => m.n));
+  const hm = m => m < 60 ? m + " min" : Math.floor(m/60) + " h " + String(m%60).padStart(2,"0");
+  $("#mBars").innerHTML = months.map(m =>
+    `<div class="mrow${m.cur ? " cur" : ""}"><span class="ml2">${m.label}</span><div class="mbar"><i style="width:${m.n/mx*100}%"></i></div>` +
+    `<span class="mv">${m.n} séance${m.n > 1 ? "s" : ""} · ${hm(m.min)}</span></div>`).join("");
+  const cnt = (arr, f) => arr.reduce((o,h) => (o[f(h)] = (o[f(h)] || 0) + 1, o), {});
+  const byF = cnt(month, h => h.format || "circuit"), byR = cnt(month, h => h.fb || "none");
+  const pills = [];
+  for (const f of ["circuit","pyramid","tabata"]) if (byF[f]) pills.push(`${FMT_NAME[f]} ${byF[f]}`);
+  for (const [k,v] of [["easy","😌"],["ok","💪"],["hard","🥵"]]) if (byR[k]) pills.push(`${v} ${byR[k]}`);
+  const pres = month.filter(h => h.preserve).length; if (pres) pills.push(`🦵 préservées ${pres}`);
+  if (month.length) pills.push(`moy. ${fmt(month.reduce((a,h) => a + (h.dur || 0), 0) / month.length)}`);
+  $("#mSplit").innerHTML = pills.length ? pills.map(x => `<span class="pill">${esc(x)}</span>`).join("") : '<span class="sub">Rien encore ce mois-ci.</span>';
   $("#mLabel").textContent = calMonth.toLocaleDateString("fr-FR", {month:"long", year:"numeric"});
   const days = new Set(done.map(h => h.date));
   let html = ["L","M","M","J","V","S","D"].map(x => `<div class="dow">${x}</div>`).join("");
@@ -827,7 +950,8 @@ function renderHist(){
   }
   $("#cal").innerHTML = html;
   const FB = {easy:"😌", ok:"💪", hard:"🥵"};
-  const rows = S.history.map((h, i) => ({h, i})).filter(x => x.h.done).slice(-10).reverse();
+  const rows = S.history.map((h, i) => ({h, i})).filter(x => x.h.done)
+    .sort((x, y) => y.h.date.localeCompare(x.h.date) || y.i - x.i).slice(0, 10);
   $("#hList").innerHTML = rows.length ? rows.map(({h, i}) =>
     `<div class="hrow"><div><div>${esc(h.title || "")}</div><div class="sub">${parseYmd(h.date).toLocaleDateString("fr-FR", {weekday:"short", day:"numeric", month:"short"})}${h.format ? " · " + FMT_NAME[h.format] : ""}${h.preserve ? " · jambes préservées" : ""}</div></div>` +
     `<div class="r">${fmt(h.dur || 0)} ${FB[h.fb] || ""}<button class="del" data-i="${i}" aria-label="Supprimer">✕</button></div></div>`).join("")

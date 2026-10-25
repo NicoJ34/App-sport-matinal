@@ -223,8 +223,8 @@ Rotation par défaut (modifiable) :
 
 ### v0.4 — Confort
 - [ ] Automatisation Raccourcis iOS du matin
-- [ ] Pictogrammes SVG simples par exercice
-- [ ] Stats mensuelles
+- [x] Pictogrammes SVG simples par exercice (accueil + séance)
+- [x] Stats mensuelles (6 derniers mois, formats, ressentis, durée moyenne)
 
 ---
 

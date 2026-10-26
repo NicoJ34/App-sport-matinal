@@ -47,6 +47,7 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
 .done-badge{display:inline-block;background:var(--ok);color:#fff;font-size:13px;font-weight:600;padding:4px 10px;border-radius:99px;margin-bottom:12px}
 .seg{display:flex;background:var(--chip);border-radius:12px;padding:3px;margin-bottom:10px}
 .seg button{flex:1;height:40px;border-radius:9px;font-weight:600;font-size:16px;color:var(--muted)}
+#segMode button{font-size:15px}
 .seg button.sel{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
 .chip{height:38px;padding:0 14px;border-radius:99px;background:var(--chip);font-size:15px;font-weight:500;color:var(--text)}
@@ -170,7 +171,7 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
     <button data-d="15">15 min</button><button data-d="20">20 min</button>
   </div>
   <div class="seg" id="segMode">
-    <button data-m="">Du jour</button><button data-m="full">Full body</button><button data-m="tabata">Tabata</button>
+    <button data-m="">Du jour</button><button data-m="full">Full body</button><button data-m="tabata">Tabata</button><button data-m="run">Après run</button>
   </div>
   <div class="chips">
     <button class="chip" id="cLegs">🦵 Préserver les jambes</button>
@@ -185,7 +186,7 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
 
 <!-- ===== Suivi ===== -->
 <section id="hist" class="screen">
-  <div class="htop"><button class="back" id="histBack">‹ Retour</button><span class="ver">Callistenik v0.4</span></div>
+  <div class="htop"><button class="back" id="histBack">‹ Retour</button><span class="ver">Callistenik v0.5</span></div>
   <h1>Suivi</h1>
   <div class="statgrid">
     <div class="stat"><b id="sMonth">0</b><span>séances ce mois</span></div>
@@ -409,6 +410,9 @@ const EX = [
   {id:"cobra",   cat:"cool", name:"Cobra", cue:"Allongé ventre, pousse sur les mains, ouvre la poitrine."},
   {id:"butterfly",cat:"cool",name:"Papillon", cue:"Assis, plantes de pieds jointes, laisse descendre les genoux."},
   {id:"baby",    cat:"cool", name:"Bébé heureux", cue:"Sur le dos, attrape tes pieds, genoux vers les aisselles."},
+  // Étirements après course (mode « Après run »)
+  {id:"hamsup",  cat:"run", sw:true, name:"Ischio jambe au ciel", cue:"Sur le dos, jambe tendue vers le plafond, mains derrière la cuisse, l'autre jambe au sol."},
+  {id:"fig4",    cat:"run", sw:true, name:"Fessier en 4", cue:"Sur le dos, cheville posée sur le genou opposé, tire la cuisse vers la poitrine."},
 ].map(e => ({tags:[], sw:false, ...e}));
 const EXBY = Object.fromEntries(EX.map(e => [e.id, e]));
 
@@ -460,6 +464,8 @@ const POSES = {
   sidelying: {h:[20,62], n:[30,66], p:[52,68], a1:[[46,61],[57,57]], a2:[[24,58],[16,52]], l1:[[68,68],[58,56]], l2:[[68,70],[84,70]]},
   seated:    {h:[65,48], n:[56,53], p:[38,68], a1:[[64,60],[72,66]], a2:[[63,61],[71,67]], l1:[[55,69],[72,70]], l2:[[55,68],[72,69]]},
   butterfly: {h:[60,35], n:[60,45], p:[60,66], a1:[[54,55],[57,67]], a2:[[66,55],[63,67]], l1:[[44,62],[57,70]], l2:[[76,62],[63,70]], sym:true},
+  hamsup:    {h:[20,66], n:[30,69], p:[52,69], a1:[[44,61],[56,47]], a2:[[44,62],[56,48]], l1:[[55,52],[58,34]], l2:[[68,69],[84,69]], fade:["a2"]},
+  fig4:      {h:[20,66], n:[30,69], p:[52,69], a1:[[42,61],[54,55]], a2:[[42,62],[54,56]], l1:[[57,52],[68,56]], l2:[[60,51],[69,60]], fade:["a2"]},
   pigeon:    {h:[55,33], n:[54,43], p:[52,64], a1:[[62,56],[68,71]], a2:[[60,56],[66,71]], l1:[[68,70],[56,72]], l2:[[36,70],[20,72]], fade:["a2"]},
 };
 
@@ -517,7 +523,7 @@ const PIC = {
   arms:"armsout", catcow:"quad", hipcirc:"quad", thoracic:"quadarm", inchworm:"pike", dogcobra:"pike", wgs:"wgs",
   deepsq:"deepsquat", legswing:"legswing",
   cossack:"sidelunge", lowlunge:"lowlunge", dogpedal:"pike", frog:"quad", scorpion:"scorpion", thread:"quad",
-  child:"child", pigeon:"pigeon", hams:"seated", quad:"sidelying", twist:"twist", cobra:"cobra", butterfly:"butterfly", baby:"baby",
+  hamsup:"hamsup", fig4:"fig4", child:"child", pigeon:"pigeon", hams:"seated", quad:"sidelying", twist:"twist", cobra:"cobra", butterfly:"butterfly", baby:"baby",
 };
 
 const REDUCE_MOTION = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -554,7 +560,9 @@ const THEMES = {
   6:{id:"legs_core",  title:"Jambes + gainage",         fmt:"pyramid", slots:["legs","core","legs","pull","legs"]},
   0:{id:"mobility",   title:"Mobilité & récupération",  fmt:"circuit", slots:["mob","mob","core","mob","mob"]},
 };
-const FMT_NAME = {circuit:"Circuit", pyramid:"Pyramide", tabata:"Tabata"};
+// Après run : 5 min de haut du corps (1 tour, 60 s / exercice) + 5 min d'étirements orientés course
+const POSTRUN = {id:"postrun", title:"Après run", fmt:"postrun", slots:["push","pull","push","pull","core"]};
+const FMT_NAME = {circuit:"Circuit", pyramid:"Pyramide", tabata:"Tabata", postrun:"Après run"};
 const T = {prep:10, warm:30, cool:30, switch:5, trans:3, slot:60, tabWork:20, tabRest:10, tabBreak:60};
 const PYR = {2:[30,45], 3:[30,45,30]};          // secondes d'effort par tour (pyramide)
 const WORK_MIN = 30, WORK_MAX = 45, WORK_DEF = 40; // circuit : effort adaptatif, repos = 60 − effort
@@ -605,7 +613,7 @@ function applyFeedback(fb, ids, format){
     const p = {...P(id)}, before = {...p};
     if (fb === "easy"){
       p.easy++; p.ok = 0;
-      if (format === "circuit" && p.work < WORK_MAX) p.work += 5;
+      if ((format === "circuit" || format === "postrun") && p.work < WORK_MAX) p.work += 5;
       if (hasLv(e) && p.easy >= 2 && p.lv < 3){ p.lv++; p.easy = 0; p.work = WORK_DEF; }
     } else if (fb === "ok"){
       p.ok++; p.easy = 0;
@@ -639,8 +647,25 @@ function pool(cat, opt){
   if (opt.preserve) p = p.filter(e => !e.tags.includes("legs"));
   return p;
 }
+function generatePostRun(date, opt, exclude){
+  const rng = rngFor(date + "|" + opt.reroll + "|run");
+  const o = {...opt, preserve:true};            // jambes déjà sollicitées : rien qui les charge
+  const used = new Set(), main = [];
+  for (const s of POSTRUN.slots){
+    const base = pool(s, o).filter(e => !used.has(e.id) && e.id !== "climb");
+    let c = base.filter(e => !exclude.has(e.id)); if (!c.length) c = base;
+    const e = c[Math.floor(rng() * c.length)]; used.add(e.id); main.push(e);
+  }
+  const pick = ids => EXBY[ids[Math.floor(rng() * ids.length)]];
+  // mollets → fléchisseurs de hanche → quadriceps → ischios → fessiers → relâchement
+  // unilatéral = 30 s par côté, bilatéral = 30 s  → ~5 min
+  const stretch = [EXBY.dogpedal, EXBY.lowlunge, EXBY.quad, EXBY.hamsup, pick(["fig4","pigeon"]), pick(["child","baby","butterfly"])]
+    .map(e => ({ex:e, dur:e.sw ? 60 : 30}));
+  return {date, theme:POSTRUN, format:"postrun", rounds:1, title:POSTRUN.title, main, warm:[], cool:stretch.map(x => x.ex), stretch};
+}
 function generate(date, opt, exclude = new Set()){
   const mode = opt.mode || "";
+  if (mode === "run") return generatePostRun(date, opt, exclude);
   const rng = rngFor(date + "|" + opt.reroll + (mode ? "|" + mode : ""));
   // choix du jour : séance prévue, ou Full body (pyramide) / Tabata à la demande
   const theme = mode === "full" ? THEMES[3] : mode === "tabata" ? THEMES[5] : THEMES[parseYmd(date).getDay()];
@@ -676,7 +701,8 @@ function buildToday(){
   return generate(TODAY, opt, new Set(prev.main.map(e => e.id)));
 }
 function buildSteps(p){
-  const st = [{kind:"prep", base:"prep", ex:p.warm[0], dur:T.prep}];
+  const post = p.format === "postrun";
+  const st = [{kind:"prep", base:"prep", ex:post ? p.main[0] : p.warm[0], dur:T.prep, post}];
   // exercice unilatéral : côté 1 → 5 s pour changer → côté 2
   const add = (kind, e, dur, extra) => {
     if (!e.sw){ st.push({kind, base:kind, ex:e, dur, ...extra}); return; }
@@ -692,6 +718,19 @@ function buildSteps(p){
     if (i > 0) trans("warm", e, info);
     add("warm", e, T.warm, {info});
   });
+  if (post){
+    p.main.forEach((e,i) => {
+      const w = workOf(e), info = `Haut du corps · ${i+1}/${p.main.length}`;
+      st.push({kind:"rest", base:"rest", ex:e, dur:T.slot - w, info});
+      add("work", e, w, {info});
+    });
+    p.stretch.forEach(({ex, dur}, i) => {
+      const info = `Étirements · ${i+1}/${p.stretch.length}`;
+      st.push({kind:"trans", base:"cool", ex, dur:T.trans, info, ph:"ÉTIREMENT"});
+      add("cool", ex, dur, {info, ph:"ÉTIREMENT"});
+    });
+    return st;
+  }
   if (p.format === "tabata"){
     for (let b = 0; b < p.rounds; b++){
       const A = p.main[2*b], B = p.main[2*b+1];
@@ -733,6 +772,11 @@ function exRow(e, n, extra){
   return `<div class="ex"><div class="n">${n}</div><div><div class="t">${esc(nm(e))}${l ? `<span class="lvl">niv. ${l}</span>` : ""}${e.sw ? " <small>(2 côtés)</small>" : ""}${extra ? ` <small>${extra}</small>` : ""}</div><div class="c">${esc(cu(e))}</div></div>${picOf(e, "hp")}</div>`;
 }
 function mainCard(p){
+  if (p.format === "postrun")
+    return `<div class="card"><h2><span>Haut du corps · 5 min</span><span>effort / 60 s</span></h2>` +
+      p.main.map((e,i) => exRow(e, i+1, workOf(e) + " s")).join("") + `</div>` +
+      `<div class="card"><h2><span>Étirements · 5 min</span><span>30 s / côté</span></h2>` +
+      p.stretch.map((x,i) => exRow(x.ex, i+1)).join("") + `</div>`;
   if (p.format === "tabata"){
     let h = `<div class="card"><h2><span>Tabata · ${p.rounds} blocs</span><span>20 s / 10 s × 8</span></h2>`;
     for (let b = 0; b < p.rounds; b++)
@@ -751,7 +795,10 @@ function renderHome(){
   $("#hDate").textContent = parseYmd(TODAY).toLocaleDateString("fr-FR", {weekday:"long", day:"numeric", month:"long"});
   const n = streak(); $("#hStreak").textContent = n ? "🔥 " + n + (n > 1 ? " jours" : " jour") : "";
   $("#hTitle").textContent = plan.title;
-  $("#hMeta").textContent = Math.round(total/60) + " min · " + FMT_NAME[plan.format] + " · " + plan.main.length + " exercices";
+  const post = plan.format === "postrun";
+  $("#hMeta").textContent = post ? Math.round(total/60) + " min · haut du corps + étirements, sans échauffement"
+    : Math.round(total/60) + " min · " + FMT_NAME[plan.format] + " · " + plan.main.length + " exercices";
+  $("#segDur").hidden = post; $("#cLegs").hidden = post;
   const doneToday = S.history.some(h => h.date === TODAY && h.done);
   $("#hDone").innerHTML = doneToday ? '<span class="done-badge">✓ Séance du jour faite</span>' : "";
   $("#startBtn").textContent = doneToday ? "Refaire une séance" : "Démarrer";
@@ -760,7 +807,7 @@ function renderHome(){
   $("#cLegs").classList.toggle("sel", S.day.preserve);
   $("#cSilent").classList.toggle("sel", S.silent);
   $("#cVoice").classList.toggle("sel", S.voice);
-  $("#hPlan").innerHTML =
+  $("#hPlan").innerHTML = post ? mainCard(plan) :
     `<div class="card"><h2><span>Échauffement</span><span>3 min</span></h2><div class="simple">${plan.warm.map(e => esc(e.name)).join(" · ")}</div></div>` +
     mainCard(plan) +
     `<div class="card"><h2><span>Retour au calme</span><span>2 min</span></h2><div class="simple">${plan.cool.map(e => esc(e.name)).join(" · ")}</div></div>`;
@@ -829,7 +876,7 @@ function enterStep(quiet){
   run.beeped = null;
   $("#run").className = "screen on k-" + (s.kind === "trans" ? s.base : s.kind) + (run.paused ? " paused" : "");
   $("#rPic").innerHTML = s.endBlock ? "" : picOf(s.ex, "rp");
-  $("#rPhase").textContent = s.endBlock ? "FIN DU BLOC" : PH[s.kind];
+  $("#rPhase").textContent = s.endBlock ? "FIN DU BLOC" : s.kind === "switch" ? PH.switch : (s.ph || PH[s.kind]);
   $("#rName").textContent = s.endBlock ? "Respire" : nm(s.ex) + (s.pair ? " + " + nm(s.pair) : "");
   $("#rCue").textContent = s.endBlock ? "" : s.pair ? "Alterne A et B : 20 s d'effort, 10 s de repos, 8 fois." : cu(s.ex);
   $("#rSide").textContent = s.kind === "switch" ? "Côté 2 ensuite" : s.side ? "Côté " + s.side : "";
@@ -846,8 +893,8 @@ function enterStep(quiet){
   else if (s.kind === "rest" && s.short){ beep(660,.25,.3); }
   else if (s.kind === "rest" && s.pair){ beep(660,.3,.3); say("Tabata. " + nm(s.ex) + " et " + nm(s.pair)); }
   else if (s.kind === "rest"){ beep(660,.3,.3); say((prev && prev.kind === "work" ? "Repos. " : "") + "Ensuite : " + nm(s.ex)); }
-  else if (s.kind === "prep"){ say("Prépare-toi. Échauffement : " + s.ex.name); }
-  else if (s.kind === "trans"){ beep(600,.15,.25); say((s.base === "cool" && prev && prev.base !== "cool" ? "Retour au calme. " : "") + s.ex.name); }
+  else if (s.kind === "prep"){ say(s.post ? "Prépare-toi. Haut du corps, on commence par : " + nm(s.ex) : "Prépare-toi. Échauffement : " + s.ex.name); }
+  else if (s.kind === "trans"){ beep(600,.15,.25); say((s.base === "cool" && prev && prev.base !== "cool" ? (s.ph ? "Étirements. " : "Retour au calme. ") : "") + s.ex.name); }
   else if (s.kind === "warm"){ beep(784,.2,.3); }
   else if (s.kind === "cool"){ beep(523,.3,.3); }
 }
@@ -994,7 +1041,7 @@ function renderHist(){
   const cnt = (arr, f) => arr.reduce((o,h) => (o[f(h)] = (o[f(h)] || 0) + 1, o), {});
   const byF = cnt(month, h => h.format || "circuit"), byR = cnt(month, h => h.fb || "none");
   const pills = [];
-  for (const f of ["circuit","pyramid","tabata"]) if (byF[f]) pills.push(`${FMT_NAME[f]} ${byF[f]}`);
+  for (const f of ["circuit","pyramid","tabata","postrun"]) if (byF[f]) pills.push(`${FMT_NAME[f]} ${byF[f]}`);
   for (const [k,v] of [["easy","😌"],["ok","💪"],["hard","🥵"]]) if (byR[k]) pills.push(`${v} ${byR[k]}`);
   const pres = month.filter(h => h.preserve).length; if (pres) pills.push(`🦵 préservées ${pres}`);
   if (month.length) pills.push(`moy. ${fmt(month.reduce((a,h) => a + (h.dur || 0), 0) / month.length)}`);
@@ -1020,7 +1067,7 @@ function renderHist(){
   const progRows = EX.filter(e => hasLv(e) && S.prog[e.id] && (P(e.id).lv !== 2 || P(e.id).work !== WORK_DEF))
     .sort((a,b) => P(b.id).lv - P(a.id).lv);
   $("#pList").innerHTML = progRows.length ? progRows.map(e =>
-    `<div class="hrow"><div><div>${esc(nm(e))}</div><div class="sub">${esc(e.name)} · effort circuit ${P(e.id).work} s</div></div><div class="r"><span class="lvl">niv. ${P(e.id).lv}</span></div></div>`).join("")
+    `<div class="hrow"><div><div>${esc(nm(e))}</div><div class="sub">${esc(e.name)} · effort circuit / après run ${P(e.id).work} s</div></div><div class="r"><span class="lvl">niv. ${P(e.id).lv}</span></div></div>`).join("")
     : '<div class="sub">Tous les exercices sont au niveau 2. Ton ressenti en fin de séance les fera évoluer : 2 « trop facile » → niveau supérieur ; « trop dur » → effort réduit puis niveau inférieur.</div>';
   $("#tBeeps").classList.toggle("on", S.beeps);
   $("#tVoice").classList.toggle("on", S.voice);

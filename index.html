@@ -186,7 +186,7 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
 
 <!-- ===== Suivi ===== -->
 <section id="hist" class="screen">
-  <div class="htop"><button class="back" id="histBack">‹ Retour</button><span class="ver">Callistenik v0.5</span></div>
+  <div class="htop"><button class="back" id="histBack">‹ Retour</button><span class="ver">Callistenik v0.6</span></div>
   <h1>Suivi</h1>
   <div class="statgrid">
     <div class="stat"><b id="sMonth">0</b><span>séances ce mois</span></div>
@@ -563,7 +563,7 @@ const THEMES = {
 // Après run : 5 min de haut du corps (1 tour, 60 s / exercice) + 5 min d'étirements orientés course
 const POSTRUN = {id:"postrun", title:"Après run", fmt:"postrun", slots:["push","pull","push","pull","core"]};
 const FMT_NAME = {circuit:"Circuit", pyramid:"Pyramide", tabata:"Tabata", postrun:"Après run"};
-const T = {prep:10, warm:30, cool:30, switch:5, trans:3, slot:60, tabWork:20, tabRest:10, tabBreak:60};
+const T = {prep:10, warm:30, cool:30, switch:5, trans:3, coolTrans:10, slot:60, tabWork:20, tabRest:10, tabBreak:60};
 const PYR = {2:[30,45], 3:[30,45,30]};          // secondes d'effort par tour (pyramide)
 const WORK_MIN = 30, WORK_MAX = 45, WORK_DEF = 40; // circuit : effort adaptatif, repos = 60 − effort
 
@@ -711,8 +711,8 @@ function buildSteps(p){
     st.push({kind:"switch", base:kind, ex:e, dur:T.switch, ...extra});
     st.push({kind, base:kind, ex:e, dur:dur - half, side:2, ...extra});
   };
-  // 3 s de transition entre deux exercices d'échauffement / de retour au calme
-  const trans = (base, e, info) => st.push({kind:"trans", base, ex:e, dur:T.trans, info});
+  // transition entre deux exercices : 3 s à l'échauffement, 10 s au retour au calme
+  const trans = (base, e, info) => st.push({kind:"trans", base, ex:e, dur:base === "cool" ? T.coolTrans : T.trans, info});
   p.warm.forEach((e,i) => {
     const info = `Échauffement · ${i+1}/${p.warm.length}`;
     if (i > 0) trans("warm", e, info);
@@ -726,7 +726,7 @@ function buildSteps(p){
     });
     p.stretch.forEach(({ex, dur}, i) => {
       const info = `Étirements · ${i+1}/${p.stretch.length}`;
-      st.push({kind:"trans", base:"cool", ex, dur:T.trans, info, ph:"ÉTIREMENT"});
+      st.push({kind:"trans", base:"cool", ex, dur:T.coolTrans, info, ph:"ÉTIREMENT"});
       add("cool", ex, dur, {info, ph:"ÉTIREMENT"});
     });
     return st;
@@ -810,7 +810,7 @@ function renderHome(){
   $("#hPlan").innerHTML = post ? mainCard(plan) :
     `<div class="card"><h2><span>Échauffement</span><span>3 min</span></h2><div class="simple">${plan.warm.map(e => esc(e.name)).join(" · ")}</div></div>` +
     mainCard(plan) +
-    `<div class="card"><h2><span>Retour au calme</span><span>2 min</span></h2><div class="simple">${plan.cool.map(e => esc(e.name)).join(" · ")}</div></div>`;
+    `<div class="card"><h2><span>Retour au calme</span><span>~3 min</span></h2><div class="simple">${plan.cool.map(e => esc(e.name)).join(" · ")}</div></div>`;
   $("#hHint").textContent = ("wakeLock" in navigator) ? "" :
     "Astuce : si l'écran se met en veille pendant la séance, règle Réglages › Luminosité › Verrouillage auto sur « Jamais » le matin.";
 }
@@ -916,7 +916,8 @@ function render(now){
   const leftMs = run.paused ? run.left : run.end - now;
   const sec = Math.ceil(leftMs/1000*FAST);
   $("#rTimer").textContent = fmt(sec);
-  if (!run.paused && sec <= 3 && sec >= 1 && run.beeped !== sec && s.dur > 5){ run.beeped = sec; beep(880,.1,.3); }
+  // compte à rebours sonore sur les 3 dernières secondes de chaque étape (exercice, pause, transition)
+  if (!run.paused && sec <= 3 && sec >= 1 && run.beeped !== sec && s.dur >= 5){ run.beeped = sec; beep(sec === 1 ? 1175 : 880, .18, .6); }
   const doneSec = run.steps.slice(0, run.i).reduce((a,x) => a + x.dur, 0) + (s.dur - leftMs/1000*FAST);
   $("#rBar").style.width = Math.min(100, doneSec / run.total * 100) + "%";
 }

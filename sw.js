@@ -1,6 +1,6 @@
 // Callistenik — service worker : l'app s'ouvre même sans réseau.
 // Réseau d'abord (pour recevoir les mises à jour), cache en secours (hors-ligne).
-const CACHE = "callistenik-v0.5";
+const CACHE = "callistenik-v0.6";
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon-180.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {

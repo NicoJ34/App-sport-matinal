@@ -188,7 +188,7 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
 
 <!-- ===== Suivi ===== -->
 <section id="hist" class="screen">
-  <div class="htop"><button class="back" id="histBack">‹ Retour</button><span class="ver">Callistenik v0.8</span></div>
+  <div class="htop"><button class="back" id="histBack">‹ Retour</button><span class="ver">Callistenik v0.9</span></div>
   <h1>Suivi</h1>
   <div class="statgrid">
     <div class="stat"><b id="sMonth">0</b><span>séances ce mois</span></div>
@@ -398,23 +398,28 @@ const EX = [
   {id:"legswing",cat:"warm", sw:true, name:"Balancements de jambe", cue:"Debout, balance une jambe d'avant en arrière, amplitude progressive."},
   // Mobilité (bloc principal des jours doux)
   {id:"cossack", cat:"mob", tags:["legs"], name:"Squat cosaque lent", cue:"Pieds très écartés, bascule lentement sur une jambe puis l'autre."},
-  {id:"lowlunge",cat:"mob", sw:true, name:"Fente basse tenue", cue:"Genou arrière au sol, pousse les hanches vers l'avant."},
-  {id:"dogpedal",cat:"mob", name:"Chien tête en bas pédalé", cue:"En V inversé, plie un genou puis l'autre, talons vers le sol."},
+  {id:"lowlunge",cat:"mob", z:"legs", sw:true, name:"Fente basse tenue", cue:"Genou arrière au sol, pousse les hanches vers l'avant."},
+  {id:"dogpedal",cat:"mob", z:"legs", name:"Chien tête en bas pédalé", cue:"En V inversé, plie un genou puis l'autre, talons vers le sol."},
   {id:"frog",    cat:"mob", name:"Grenouille", cue:"À 4 pattes, genoux écartés, recule doucement les hanches."},
   {id:"scorpion",cat:"mob", name:"Scorpion au sol", cue:"Allongé ventre, amène un pied vers la main opposée, alterne."},
-  {id:"thread",  cat:"mob", sw:true, name:"Aiguille dans le chas", cue:"À 4 pattes, glisse un bras sous l'autre, épaule au sol."},
+  {id:"thread",  cat:"mob", z:"up", sw:true, name:"Aiguille dans le chas", cue:"À 4 pattes, glisse un bras sous l'autre, épaule au sol."},
   // Retour au calme
-  {id:"child",   cat:"cool", name:"Posture de l'enfant", cue:"Fesses sur les talons, bras devant, respire lentement."},
-  {id:"pigeon",  cat:"cool", sw:true, name:"Pigeon", cue:"Une jambe pliée devant, l'autre tendue derrière, buste vers l'avant."},
-  {id:"hams",    cat:"cool", name:"Ischios assis", cue:"Jambes tendues, penche-toi depuis les hanches, dos long."},
-  {id:"quad",    cat:"cool", sw:true, name:"Quadriceps allongé", cue:"Allongé sur le côté, attrape la cheville, genoux serrés."},
-  {id:"twist",   cat:"cool", sw:true, name:"Torsion allongée", cue:"Sur le dos, genou vers le côté opposé, épaules au sol."},
-  {id:"cobra",   cat:"cool", name:"Cobra", cue:"Allongé ventre, pousse sur les mains, ouvre la poitrine."},
-  {id:"butterfly",cat:"cool",name:"Papillon", cue:"Assis, plantes de pieds jointes, laisse descendre les genoux."},
-  {id:"baby",    cat:"cool", name:"Bébé heureux", cue:"Sur le dos, attrape tes pieds, genoux vers les aisselles."},
+  {id:"child",   cat:"cool", z:"back", name:"Posture de l'enfant", cue:"Fesses sur les talons, bras devant, respire lentement."},
+  {id:"pigeon",  cat:"cool", z:"legs", sw:true, name:"Pigeon", cue:"Une jambe pliée devant, l'autre tendue derrière, buste vers l'avant."},
+  {id:"hams",    cat:"cool", z:"legs", name:"Ischios assis", cue:"Jambes tendues, penche-toi depuis les hanches, dos long."},
+  {id:"quad",    cat:"cool", z:"legs", sw:true, name:"Quadriceps allongé", cue:"Allongé sur le côté, attrape la cheville, genoux serrés."},
+  {id:"twist",   cat:"cool", z:"back", sw:true, name:"Torsion allongée", cue:"Sur le dos, genou vers le côté opposé, épaules au sol."},
+  {id:"cobra",   cat:"cool", z:"back", name:"Cobra", cue:"Allongé ventre, pousse sur les mains, ouvre la poitrine."},
+  {id:"butterfly",cat:"cool", z:"legs",name:"Papillon", cue:"Assis, plantes de pieds jointes, laisse descendre les genoux."},
+  {id:"baby",    cat:"cool", z:"legs", name:"Bébé heureux", cue:"Sur le dos, attrape tes pieds, genoux vers les aisselles."},
+  {id:"crossarm",cat:"cool", z:"up", sw:true, name:"Épaule bras croisé", cue:"À genoux, ramène un bras tendu devant la poitrine, l'autre main tire le coude."},
+  {id:"triceps", cat:"cool", z:"up", sw:true, name:"Triceps derrière la tête", cue:"À genoux, main entre les omoplates, l'autre main pousse doucement le coude."},
+  {id:"pecback", cat:"cool", z:"up", name:"Pectoraux mains dans le dos", cue:"À genoux, doigts croisés dans le dos, tends les bras et ouvre la poitrine."},
+  {id:"sidechild",cat:"cool", z:"back", sw:true, name:"Enfant de côté", cue:"Posture de l'enfant, mains marchées vers un côté : étire le flanc et le dos."},
+  {id:"upback",  cat:"cool", z:"back", name:"Dos rond assis", cue:"Assis sur les talons, bras tendus devant, mains croisées, arrondis le haut du dos."},
   // Étirements après course (mode « Après run »)
-  {id:"hamsup",  cat:"run", sw:true, name:"Ischio jambe au ciel", cue:"Sur le dos, jambe tendue vers le plafond, mains derrière la cuisse, l'autre jambe au sol."},
-  {id:"fig4",    cat:"run", sw:true, name:"Fessier en 4", cue:"Sur le dos, cheville posée sur le genou opposé, tire la cuisse vers la poitrine."},
+  {id:"hamsup",  cat:"run", z:"legs", sw:true, name:"Ischio jambe au ciel", cue:"Sur le dos, jambe tendue vers le plafond, mains derrière la cuisse, l'autre jambe au sol."},
+  {id:"fig4",    cat:"run", z:"legs", sw:true, name:"Fessier en 4", cue:"Sur le dos, cheville posée sur le genou opposé, tire la cuisse vers la poitrine."},
 ].map(e => ({tags:[], sw:false, ...e}));
 const EXBY = Object.fromEntries(EX.map(e => [e.id, e]));
 
@@ -468,6 +473,10 @@ const POSES = {
   butterfly: {h:[60,35], n:[60,45], p:[60,66], a1:[[54,55],[57,67]], a2:[[66,55],[63,67]], l1:[[44,62],[57,70]], l2:[[76,62],[63,70]], sym:true},
   hamsup:    {h:[20,66], n:[30,69], p:[52,69], a1:[[44,61],[56,47]], a2:[[44,62],[56,48]], l1:[[55,52],[58,34]], l2:[[68,69],[84,69]], fade:["a2"]},
   fig4:      {h:[20,66], n:[30,69], p:[52,69], a1:[[42,61],[54,55]], a2:[[42,62],[54,56]], l1:[[57,52],[68,56]], l2:[[60,51],[69,60]], fade:["a2"]},
+  crossarm:  {h:[58,15], n:[58,25], p:[58,47], a1:[[70,26],[80,27]], a2:[[64,34],[70,27]], l1:[[59,70],[42,71]], l2:[[58,69],[41,70]]},
+  triceps:   {h:[53,18], n:[58,27], p:[58,47], a1:[[64,7],[49,25]], a2:[[69,20],[65,8]], l1:[[59,70],[42,71]], l2:[[58,69],[41,70]]},
+  pecback:   {h:[60,15], n:[58,25], p:[58,47], a1:[[52,35],[44,42]], a2:[[53,36],[45,43]], l1:[[59,70],[42,71]], l2:[[58,69],[41,70]]},
+  upback:    {h:[64,38], n:[56,33], p:[46,58], a1:[[69,39],[82,42]], a2:[[68,40],[81,43]], l1:[[66,70],[44,71]], l2:[[65,69],[43,70]]},
   pigeon:    {h:[55,33], n:[54,43], p:[52,64], a1:[[62,56],[68,71]], a2:[[60,56],[66,71]], l1:[[68,70],[56,72]], l2:[[36,70],[20,72]], fade:["a2"]},
 };
 
@@ -525,7 +534,7 @@ const PIC = {
   arms:"armsout", catcow:"quad", hipcirc:"quad", thoracic:"quadarm", inchworm:"pike", dogcobra:"pike", wgs:"wgs",
   deepsq:"deepsquat", legswing:"legswing",
   cossack:"sidelunge", lowlunge:"lowlunge", dogpedal:"pike", frog:"quad", scorpion:"scorpion", thread:"quad",
-  hamsup:"hamsup", fig4:"fig4", child:"child", pigeon:"pigeon", hams:"seated", quad:"sidelying", twist:"twist", cobra:"cobra", butterfly:"butterfly", baby:"baby",
+  hamsup:"hamsup", fig4:"fig4", crossarm:"crossarm", triceps:"triceps", pecback:"pecback", upback:"upback", sidechild:"child", child:"child", pigeon:"pigeon", hams:"seated", quad:"sidelying", twist:"twist", cobra:"cobra", butterfly:"butterfly", baby:"baby",
 };
 
 const REDUCE_MOTION = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -659,9 +668,10 @@ function generatePostRun(date, opt, exclude){
     const e = c[Math.floor(rng() * c.length)]; used.add(e.id); main.push(e);
   }
   const pick = ids => EXBY[ids[Math.floor(rng() * ids.length)]];
-  // mollets → fléchisseurs de hanche → quadriceps → ischios → fessiers → relâchement
-  // unilatéral = 30 s par côté, bilatéral = 30 s  → ~5 min
-  const stretch = [EXBY.dogpedal, EXBY.lowlunge, EXBY.quad, EXBY.hamsup, pick(["fig4","pigeon"]), pick(["child","baby","butterfly"])]
+  // mollets → fléchisseurs de hanche → haut du corps → quadriceps → ischios → fessiers → dos (relâchement)
+  // unilatéral = 30 s par côté, bilatéral = 30 s
+  const stretch = [EXBY.dogpedal, EXBY.lowlunge, pick(["crossarm","triceps","pecback","thread"]), EXBY.quad, EXBY.hamsup,
+                   pick(["fig4","pigeon"]), pick(["child","sidechild","twist","upback"])]
     .map(e => ({ex:e, dur:e.sw ? 60 : 30}));
   return {date, theme:POSTRUN, format:"postrun", rounds:1, title:POSTRUN.title, main, warm:[], cool:stretch.map(x => x.ex), stretch};
 }
@@ -693,7 +703,11 @@ function generate(date, opt, exclude = new Set()){
     return a.map((e,i) => [rng(), i]).sort((x,y) => x[0]-y[0]).slice(0, n).map(x => x[1]).sort((x,y) => x-y).map(i => a[i]);
   };
   const warm = subset(EX.filter(e => e.cat === "warm"), 6);
-  const cool = subset(EX.filter(e => e.cat === "cool"), 4);
+  // retour au calme : au moins 6 étirements — 2 haut du corps, 2 jambes, 2 dos (on finit relâché)
+  const zone = z => EX.filter(e => e.z === z && (e.cat === "cool" || e.cat === "mob"));
+  const pickZ = (z, n) => { const all = zone(z), a = all.filter(e => !used.has(e.id));
+    return a.length >= n ? subset(a, n) : [...a, ...subset(all.filter(e => used.has(e.id)), n - a.length)]; };
+  const cool = [...pickZ("up", 2), ...pickZ("legs", 2), ...pickZ("back", 2)];
   return {date, theme, format, rounds, title: theme.title + (changed ? " · jambes préservées" : ""), main, warm, cool};
 }
 function buildToday(){
@@ -777,7 +791,7 @@ function mainCard(p){
   if (p.format === "postrun")
     return (p.main.length ? `<div class="card"><h2><span>Haut du corps · 5 min</span><span>effort / 60 s</span></h2>` +
       p.main.map((e,i) => exRow(e, i+1, workOf(e) + " s")).join("") + `</div>` : "") +
-      `<div class="card"><h2><span>Étirements · 5 min</span><span>30 s / côté</span></h2>` +
+      `<div class="card"><h2><span>Étirements · ${p.stretch.length} · ~${Math.round(p.stretch.reduce((a,x) => a + x.dur + T.coolTrans + (x.ex.sw ? T.switch : 0), 0)/60)} min</span><span>30 s / côté</span></h2>` +
       p.stretch.map((x,i) => exRow(x.ex, i+1)).join("") + `</div>`;
   if (p.format === "tabata"){
     let h = `<div class="card"><h2><span>Tabata · ${p.rounds} blocs</span><span>20 s / 10 s × 8</span></h2>`;
@@ -813,7 +827,7 @@ function renderHome(){
   $("#hPlan").innerHTML = post ? mainCard(plan) :
     `<div class="card"><h2><span>Échauffement</span><span>3 min</span></h2><div class="simple">${plan.warm.map(e => esc(e.name)).join(" · ")}</div></div>` +
     mainCard(plan) +
-    `<div class="card"><h2><span>Retour au calme</span><span>~3 min</span></h2><div class="simple">${plan.cool.map(e => esc(e.name)).join(" · ")}</div></div>`;
+    `<div class="card"><h2><span>Retour au calme · ${plan.cool.length}</span><span>~${Math.round(plan.cool.reduce((a,e) => a + T.cool + T.coolTrans + (e.sw ? T.switch : 0), 0)/60)} min</span></h2><div class="simple">${plan.cool.map(e => esc(e.name)).join(" · ")}</div></div>`;
   $("#hHint").textContent = ("wakeLock" in navigator) ? "" :
     "Astuce : si l'écran se met en veille pendant la séance, règle Réglages › Luminosité › Verrouillage auto sur « Jamais » le matin.";
 }

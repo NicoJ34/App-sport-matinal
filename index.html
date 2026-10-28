@@ -51,6 +51,7 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
 .seg button.sel{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
 .chip{height:38px;padding:0 14px;border-radius:99px;background:var(--chip);font-size:15px;font-weight:500;color:var(--text)}
+[hidden]{display:none!important}
 .chip.sel{background:var(--accent);color:var(--accent-ink)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-bottom:12px}
 .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:0 0 8px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -175,6 +176,7 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
   </div>
   <div class="chips">
     <button class="chip" id="cLegs">🦵 Préserver les jambes</button>
+    <button class="chip" id="cUpper" hidden>💪 + Haut du corps</button>
     <button class="chip" id="cSilent">🤫 Silencieux</button>
     <button class="chip" id="cVoice">🗣️ Voix</button>
   </div>
@@ -186,7 +188,7 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
 
 <!-- ===== Suivi ===== -->
 <section id="hist" class="screen">
-  <div class="htop"><button class="back" id="histBack">‹ Retour</button><span class="ver">Callistenik v0.6</span></div>
+  <div class="htop"><button class="back" id="histBack">‹ Retour</button><span class="ver">Callistenik v0.7</span></div>
   <h1>Suivi</h1>
   <div class="statgrid">
     <div class="stat"><b id="sMonth">0</b><span>séances ce mois</span></div>
@@ -560,7 +562,7 @@ const THEMES = {
   6:{id:"legs_core",  title:"Jambes + gainage",         fmt:"pyramid", slots:["legs","core","legs","pull","legs"]},
   0:{id:"mobility",   title:"Mobilité & récupération",  fmt:"circuit", slots:["mob","mob","core","mob","mob"]},
 };
-// Après run : 5 min de haut du corps (1 tour, 60 s / exercice) + 5 min d'étirements orientés course
+// Après run : ~5 min d'étirements orientés course, + 5 min de haut du corps en option (1 tour, 60 s / exercice)
 const POSTRUN = {id:"postrun", title:"Après run", fmt:"postrun", slots:["push","pull","push","pull","core"]};
 const FMT_NAME = {circuit:"Circuit", pyramid:"Pyramide", tabata:"Tabata", postrun:"Après run"};
 const T = {prep:10, warm:30, cool:30, switch:5, trans:3, coolTrans:10, slot:60, tabWork:20, tabRest:10, tabBreak:60};
@@ -582,7 +584,7 @@ const clone = o => JSON.parse(JSON.stringify(o));
 
 /* ---------- état persistant ---------- */
 const KEY = "callistenik_v1";
-let S = {duration:15, silent:false, voice:true, beeps:true, history:[], day:{}, prog:{}};
+let S = {duration:15, runUpper:false, silent:false, voice:true, beeps:true, history:[], day:{}, prog:{}};
 try { Object.assign(S, JSON.parse(localStorage.getItem(KEY)) || {}); } catch(e) {}
 if (!S.prog) S.prog = {};
 if (S.day.date !== TODAY) S.day = {date:TODAY, preserve:false, reroll:0};
@@ -651,7 +653,7 @@ function generatePostRun(date, opt, exclude){
   const rng = rngFor(date + "|" + opt.reroll + "|run");
   const o = {...opt, preserve:true};            // jambes déjà sollicitées : rien qui les charge
   const used = new Set(), main = [];
-  for (const s of POSTRUN.slots){
+  for (const s of (opt.upper ? POSTRUN.slots : [])){
     const base = pool(s, o).filter(e => !used.has(e.id) && e.id !== "climb");
     let c = base.filter(e => !exclude.has(e.id)); if (!c.length) c = base;
     const e = c[Math.floor(rng() * c.length)]; used.add(e.id); main.push(e);
@@ -695,14 +697,14 @@ function generate(date, opt, exclude = new Set()){
   return {date, theme, format, rounds, title: theme.title + (changed ? " · jambes préservées" : ""), main, warm, cool};
 }
 function buildToday(){
-  const opt = {reroll:S.day.reroll, preserve:S.day.preserve, silent:S.silent, duration:S.duration, mode:S.day.mode || ""};
+  const opt = {reroll:S.day.reroll, preserve:S.day.preserve, silent:S.silent, duration:S.duration, mode:S.day.mode || "", upper:!!S.runUpper};
   const y = parseYmd(TODAY); y.setDate(y.getDate() - 1);
   const prev = generate(ymd(y), {...opt, reroll:0, preserve:false, mode:""});
   return generate(TODAY, opt, new Set(prev.main.map(e => e.id)));
 }
 function buildSteps(p){
   const post = p.format === "postrun";
-  const st = [{kind:"prep", base:"prep", ex:post ? p.main[0] : p.warm[0], dur:T.prep, post}];
+  const st = [{kind:"prep", base:"prep", ex:post ? (p.main[0] || p.stretch[0].ex) : p.warm[0], dur:T.prep, post, upper:post && p.main.length > 0}];
   // exercice unilatéral : côté 1 → 5 s pour changer → côté 2
   const add = (kind, e, dur, extra) => {
     if (!e.sw){ st.push({kind, base:kind, ex:e, dur, ...extra}); return; }
@@ -726,7 +728,7 @@ function buildSteps(p){
     });
     p.stretch.forEach(({ex, dur}, i) => {
       const info = `Étirements · ${i+1}/${p.stretch.length}`;
-      st.push({kind:"trans", base:"cool", ex, dur:T.coolTrans, info, ph:"ÉTIREMENT"});
+      if (i > 0 || p.main.length) st.push({kind:"trans", base:"cool", ex, dur:T.coolTrans, info, ph:"ÉTIREMENT"});
       add("cool", ex, dur, {info, ph:"ÉTIREMENT"});
     });
     return st;
@@ -773,8 +775,8 @@ function exRow(e, n, extra){
 }
 function mainCard(p){
   if (p.format === "postrun")
-    return `<div class="card"><h2><span>Haut du corps · 5 min</span><span>effort / 60 s</span></h2>` +
-      p.main.map((e,i) => exRow(e, i+1, workOf(e) + " s")).join("") + `</div>` +
+    return (p.main.length ? `<div class="card"><h2><span>Haut du corps · 5 min</span><span>effort / 60 s</span></h2>` +
+      p.main.map((e,i) => exRow(e, i+1, workOf(e) + " s")).join("") + `</div>` : "") +
       `<div class="card"><h2><span>Étirements · 5 min</span><span>30 s / côté</span></h2>` +
       p.stretch.map((x,i) => exRow(x.ex, i+1)).join("") + `</div>`;
   if (p.format === "tabata"){
@@ -796,9 +798,10 @@ function renderHome(){
   const n = streak(); $("#hStreak").textContent = n ? "🔥 " + n + (n > 1 ? " jours" : " jour") : "";
   $("#hTitle").textContent = plan.title;
   const post = plan.format === "postrun";
-  $("#hMeta").textContent = post ? Math.round(total/60) + " min · haut du corps + étirements, sans échauffement"
+  $("#hMeta").textContent = post ? Math.round(total/60) + (plan.main.length ? " min · haut du corps + étirements, sans échauffement" : " min · étirements, sans échauffement")
     : Math.round(total/60) + " min · " + FMT_NAME[plan.format] + " · " + plan.main.length + " exercices";
-  $("#segDur").hidden = post; $("#cLegs").hidden = post;
+  $("#segDur").hidden = post; $("#cLegs").hidden = post; $("#cUpper").hidden = !post;
+  $("#cUpper").classList.toggle("sel", !!S.runUpper);
   const doneToday = S.history.some(h => h.date === TODAY && h.done);
   $("#hDone").innerHTML = doneToday ? '<span class="done-badge">✓ Séance du jour faite</span>' : "";
   $("#startBtn").textContent = doneToday ? "Refaire une séance" : "Démarrer";
@@ -816,6 +819,7 @@ function renderHome(){
 }
 document.querySelectorAll("#segDur button").forEach(b => b.onclick = () => { S.duration = Number(b.dataset.d); save(); renderHome(); });
 document.querySelectorAll("#segMode button").forEach(b => b.onclick = () => { S.day.mode = b.dataset.m; save(); renderHome(); });
+$("#cUpper").onclick  = () => { S.runUpper = !S.runUpper; save(); renderHome(); };
 $("#cLegs").onclick   = () => { S.day.preserve = !S.day.preserve; save(); renderHome(); };
 $("#cSilent").onclick = () => { S.silent = !S.silent; save(); renderHome(); };
 $("#cVoice").onclick  = () => { S.voice = !S.voice; save(); renderHome(); };
@@ -893,7 +897,7 @@ function enterStep(quiet){
   else if (s.kind === "rest" && s.short){ beep(660,.25,.3); }
   else if (s.kind === "rest" && s.pair){ beep(660,.3,.3); say("Tabata. " + nm(s.ex) + " et " + nm(s.pair)); }
   else if (s.kind === "rest"){ beep(660,.3,.3); say((prev && prev.kind === "work" ? "Repos. " : "") + "Ensuite : " + nm(s.ex)); }
-  else if (s.kind === "prep"){ say(s.post ? "Prépare-toi. Haut du corps, on commence par : " + nm(s.ex) : "Prépare-toi. Échauffement : " + s.ex.name); }
+  else if (s.kind === "prep"){ say(s.upper ? "Prépare-toi. Haut du corps, on commence par : " + nm(s.ex) : s.post ? "Prépare-toi. Étirements, on commence par : " + s.ex.name : "Prépare-toi. Échauffement : " + s.ex.name); }
   else if (s.kind === "trans"){ beep(600,.15,.25); say((s.base === "cool" && prev && prev.base !== "cool" ? (s.ph ? "Étirements. " : "Retour au calme. ") : "") + s.ex.name); }
   else if (s.kind === "warm"){ beep(784,.2,.3); }
   else if (s.kind === "cool"){ beep(523,.3,.3); }
@@ -985,6 +989,7 @@ function finish(){
   $("#eStreak").textContent = "🔥 " + streak();
   document.querySelectorAll("#fb button").forEach(b => b.classList.remove("sel"));
   $("#thanks").textContent = "";
+  const noFb = !plan.main.length; $("#fb").hidden = noFb; $("#fb").previousElementSibling.hidden = noFb;
   show("end");
 }
 $("#startBtn").onclick = startWorkout;

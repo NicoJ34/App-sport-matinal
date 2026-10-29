@@ -1,4 +1,4 @@
-# Callistenik — v0.4
+# Callistenik — v1.0
 
 Séance matinale de 15–20 min au poids du corps, tapis de sol uniquement.
 

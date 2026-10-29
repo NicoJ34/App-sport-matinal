@@ -15,8 +15,8 @@ Ouvre la version publiée par Claude (lien dans la conversation) dans Safari sur
 App Raccourcis → Automatisation → **+** → Heure de la journée (ex. 6h45, jours voulus) → **Exécuter immédiatement** → action « Ouvrir les URL » avec l'URL ci-dessus.
 
 ## Utilisation
-- **15 / 20 min** : 2 ou 3 tours du circuit.
-- **Du jour / Full body / Tabata** : séance prévue pour le jour, ou au choix un Full body (pyramide) ou un Tabata — tous les jours, dimanche compris (choix valable pour la journée).
+- **Du jour / Full body / Tabata / Étirements** : séance prévue pour le jour, ou au choix un Full body (pyramide), un Tabata ou ~5 min d'étirements après course (+ haut du corps en option) — tous les jours, dimanche compris (choix valable pour la journée).
+- **15 / 20 min** : 2 ou 3 tours du circuit (masqué en mode Étirements).
 - **🦵 Préserver les jambes** : pour aujourd'hui seulement (jour de course) → pas de squats, fentes, cardio.
 - **🤫 Silencieux** : aucun saut (mémorisé).
 - **🗣️ Voix** : annonces en français.

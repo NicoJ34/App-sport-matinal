@@ -168,11 +168,11 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
   <h1 id="hTitle"></h1>
   <div class="meta" id="hMeta"></div>
   <div id="hDone"></div>
+  <div class="seg" id="segMode">
+    <button data-m="">Du jour</button><button data-m="full">Full body</button><button data-m="tabata">Tabata</button><button data-m="run">Étirements</button>
+  </div>
   <div class="seg" id="segDur">
     <button data-d="15">15 min</button><button data-d="20">20 min</button>
-  </div>
-  <div class="seg" id="segMode">
-    <button data-m="">Du jour</button><button data-m="full">Full body</button><button data-m="tabata">Tabata</button><button data-m="run">Après run</button>
   </div>
   <div class="chips">
     <button class="chip" id="cLegs">🦵 Préserver les jambes</button>
@@ -417,7 +417,7 @@ const EX = [
   {id:"pecback", cat:"cool", z:"up", name:"Pectoraux mains dans le dos", cue:"À genoux, doigts croisés dans le dos, tends les bras et ouvre la poitrine."},
   {id:"sidechild",cat:"cool", z:"back", sw:true, name:"Enfant de côté", cue:"Posture de l'enfant, mains marchées vers un côté : étire le flanc et le dos."},
   {id:"upback",  cat:"cool", z:"back", name:"Dos rond assis", cue:"Assis sur les talons, bras tendus devant, mains croisées, arrondis le haut du dos."},
-  // Étirements après course (mode « Après run »)
+  // Étirements après course (mode « Étirements »)
   {id:"hamsup",  cat:"run", z:"legs", sw:true, name:"Ischio jambe au ciel", cue:"Sur le dos, jambe tendue vers le plafond, mains derrière la cuisse, l'autre jambe au sol."},
   {id:"fig4",    cat:"run", z:"legs", sw:true, name:"Fessier en 4", cue:"Sur le dos, cheville posée sur le genou opposé, tire la cuisse vers la poitrine."},
 ].map(e => ({tags:[], sw:false, ...e}));
@@ -571,9 +571,9 @@ const THEMES = {
   6:{id:"legs_core",  title:"Jambes + gainage",         fmt:"pyramid", slots:["legs","core","legs","pull","legs"]},
   0:{id:"mobility",   title:"Mobilité & récupération",  fmt:"circuit", slots:["mob","mob","core","mob","mob"]},
 };
-// Après run : ~5 min d'étirements orientés course, + 5 min de haut du corps en option (1 tour, 60 s / exercice)
-const POSTRUN = {id:"postrun", title:"Après run", fmt:"postrun", slots:["push","pull","push","pull","core"]};
-const FMT_NAME = {circuit:"Circuit", pyramid:"Pyramide", tabata:"Tabata", postrun:"Après run"};
+// Étirements : ~5 min d'étirements orientés course, + 5 min de haut du corps en option (1 tour, 60 s / exercice)
+const POSTRUN = {id:"postrun", title:"Étirements", fmt:"postrun", slots:["push","pull","push","pull","core"]};
+const FMT_NAME = {circuit:"Circuit", pyramid:"Pyramide", tabata:"Tabata", postrun:"Étirements"};
 const T = {prep:10, warm:30, cool:30, switch:5, trans:3, coolTrans:10, slot:60, tabWork:20, tabRest:10, tabBreak:60};
 const PYR = {2:[30,45], 3:[30,45,30]};          // secondes d'effort par tour (pyramide)
 const WORK_MIN = 30, WORK_MAX = 45, WORK_DEF = 40; // circuit : effort adaptatif, repos = 60 − effort
@@ -1095,7 +1095,7 @@ function renderHist(){
   const progRows = EX.filter(e => hasLv(e) && S.prog[e.id] && (P(e.id).lv !== 2 || P(e.id).work !== WORK_DEF))
     .sort((a,b) => P(b.id).lv - P(a.id).lv);
   $("#pList").innerHTML = progRows.length ? progRows.map(e =>
-    `<div class="hrow"><div><div>${esc(nm(e))}</div><div class="sub">${esc(e.name)} · effort circuit / après run ${P(e.id).work} s</div></div><div class="r"><span class="lvl">niv. ${P(e.id).lv}</span></div></div>`).join("")
+    `<div class="hrow"><div><div>${esc(nm(e))}</div><div class="sub">${esc(e.name)} · effort circuit / étirements ${P(e.id).work} s</div></div><div class="r"><span class="lvl">niv. ${P(e.id).lv}</span></div></div>`).join("")
     : '<div class="sub">Tous les exercices sont au niveau 2. Ton ressenti en fin de séance les fera évoluer : 2 « trop facile » → niveau supérieur ; « trop dur » → effort réduit puis niveau inférieur.</div>';
   $("#tBeeps").classList.toggle("on", S.beeps);
   $("#tVoice").classList.toggle("on", S.voice);

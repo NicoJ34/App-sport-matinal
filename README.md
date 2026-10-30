@@ -1,4 +1,4 @@
-# Callistenik — v1.0
+# Callistenik — v2.0
 
 Séance matinale de 15–20 min au poids du corps, tapis de sol uniquement.
 
@@ -32,6 +32,15 @@ App Raccourcis → Automatisation → **+** → Heure de la journée (ex. 6h45, 
 - Ressenti en fin de séance : 😌 trop facile ×2 → niveau supérieur (et +5 s en circuit) ; 💪 parfait ×3 → +5 s ; 🥵 trop dur → −5 s puis niveau inférieur. On peut changer d'avis : le dernier choix compte.
 - Pendant l'effort : **↓ Version plus facile** baisse le niveau immédiatement.
 - **Suivi** : ✕ pour supprimer une séance (2 taps), Progression, Sauvegarder / Restaurer (fichier JSON), remise à zéro des niveaux.
+
+## Strava (v2.0) — envoi automatique
+Chaque séance terminée est envoyée sur Strava (type **Workout**, en intérieur) avec le détail : format, échauffement, exercices et niveaux, étirements, puis le ressenti dès que tu le donnes.
+1. Sur **strava.com/settings/api**, crée une application : nom libre (ex. Callistenik), site `https://nicoj34.github.io`, **Authorization Callback Domain : `nicoj34.github.io`**.
+2. Dans l'app : **Suivi › Strava** → colle le **Client ID** et le **Client Secret** → **Connecter Strava** → autorise.
+3. C'est tout : les séances suivantes partent seules. Sans réseau, elles attendent et partent au retour du réseau.
+- Les identifiants restent sur le téléphone (jamais dans le dépôt ni dans la sauvegarde JSON).
+- Si le retour de Strava s'ouvre hors de l'app : connecte-toi là, touche **Copier le code**, puis colle-le dans l'app (« coller un code de connexion »).
+- Supprimer une séance dans le Suivi ne la supprime pas sur Strava.
 
 ## Pour tester sur ordinateur
 `index.html?fast=20` accélère le minuteur ×20 ; `index.html?date=2026-10-31` affiche la séance d'un autre jour.

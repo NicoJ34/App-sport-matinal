@@ -104,6 +104,18 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
 .sbtn{height:46px;border-radius:12px;background:var(--chip);font-weight:600;font-size:15px}
 .sbtn.armed{background:var(--danger);color:#fff}
 .msg{font-size:13.5px;color:var(--ok);min-height:18px;margin-top:8px;text-align:center}
+.fld{display:block;font-size:13px;color:var(--muted);margin-top:10px}
+.fld input{display:block;width:100%;margin-top:4px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:16px;padding:0 12px;font-family:inherit}
+.sv{font-size:14px;line-height:1.45;color:var(--muted);margin:2px 0 6px}
+.sv b{color:var(--text)}
+.sv.ok b{color:var(--ok)}
+.sv.err{color:var(--danger)}
+.sbtn.strava{background:#fc4c02;color:#fff}
+.stv{font-size:14.5px;min-height:22px;margin-top:10px;color:var(--muted);text-align:center}
+.stv a{color:#fc4c02;font-weight:600}
+.stv.ok{color:var(--ok)} .stv.err{color:var(--danger)}
+.stag{font-size:12px;font-weight:700;color:#fc4c02}
+.stag.wait{color:var(--muted)}
 
 .ex .hp{width:64px;height:auto;color:var(--accent);flex:none;margin-left:auto;align-self:center}
 .mrow{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:10px;padding:5px 0;font-size:14px}
@@ -188,7 +200,7 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
 
 <!-- ===== Suivi ===== -->
 <section id="hist" class="screen">
-  <div class="htop"><button class="back" id="histBack">‹ Retour</button><span class="ver">Callistenik v1.0</span></div>
+  <div class="htop"><button class="back" id="histBack">‹ Retour</button><span class="ver">Callistenik v2.0</span></div>
   <h1>Suivi</h1>
   <div class="statgrid">
     <div class="stat"><b id="sMonth">0</b><span>séances ce mois</span></div>
@@ -201,6 +213,23 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
     <div class="subh">Ce mois-ci</div><div class="split" id="mSplit"></div></div>
   <div class="card"><h2><span>Dernières séances</span></h2><div id="hList"></div></div>
   <div class="card"><h2><span>Progression</span></h2><div id="pList"></div></div>
+  <div class="card" id="stCard"><h2><span>Strava</span></h2>
+    <div class="sv" id="stState"></div>
+    <div id="stSetup">
+      <label class="fld">Client ID<input id="stId" inputmode="numeric" autocomplete="off"></label>
+      <label class="fld">Client Secret<input id="stSecret" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+      <div class="btnrow" style="grid-template-columns:1fr"><button class="sbtn strava" id="stConnect">Connecter Strava</button></div>
+      <label class="fld">… ou coller un code de connexion<input id="stPaste" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+    </div>
+    <div id="stOn" hidden>
+      <div class="row"><span>Envoi automatique après chaque séance</span><button class="toggle" id="tStrava" aria-label="Envoi Strava"></button></div>
+      <div class="btnrow">
+        <button class="sbtn" id="stCopy">Copier le code</button>
+        <button class="sbtn" id="stOff">Déconnecter</button>
+      </div>
+    </div>
+    <div class="msg" id="stMsg"></div>
+  </div>
   <div class="card"><h2><span>Réglages</span></h2>
     <div class="row"><span>Bips</span><button class="toggle" id="tBeeps" aria-label="Bips"></button></div>
     <div class="row"><span>Voix</span><button class="toggle" id="tVoice" aria-label="Voix"></button></div>
@@ -255,6 +284,7 @@ h1{font-size:30px;line-height:1.1;margin:6px 0 4px;letter-spacing:-.5px}
     <button data-f="hard">🥵 Trop dur</button>
   </div>
   <div class="thanks" id="thanks"></div>
+  <div class="stv" id="eStrava"></div>
   <button class="link" id="homeBtn">Retour à l'accueil</button>
   <button class="link" id="endHist" style="margin-top:0">📅 Voir le suivi</button>
 </section>
@@ -1000,8 +1030,10 @@ function stopRun(){
 }
 function finish(){
   const realSec = Math.round((Date.now() - run.started - run.pausedMs)/1000*FAST);
-  S.history.push({date:TODAY, theme:plan.theme.id, title:plan.title, format:plan.format, dur:realSec,
-                  ex:plan.main.map(e => e.id), rounds:plan.rounds, preserve:S.day.preserve, fb:null, done:true});
+  const entry = {date:TODAY, theme:plan.theme.id, title:plan.title, format:plan.format, dur:realSec,
+                  ex:plan.main.map(e => e.id), rounds:plan.rounds, preserve:S.day.preserve, fb:null, done:true};
+  if (stReady() && ST.auto) entry.strava = {status:"pending", start:localIso(new Date(run.started)), detail:sessionDetail(plan, entry)};
+  S.history.push(entry);
   lastRun = {progBefore: clone(S.prog), ids: plan.main.map(e => e.id), format: plan.format};
   save(); stopRun();
   beep(784,.15,.35); beep(988,.15,.35,.16); beep(1319,.4,.35,.32);
@@ -1013,6 +1045,8 @@ function finish(){
   $("#thanks").textContent = "";
   const noFb = !plan.main.length; $("#fb").hidden = noFb; $("#fb").previousElementSibling.hidden = noFb;
   show("end");
+  stView(entry);
+  if (entry.strava) stFlush();
 }
 $("#startBtn").onclick = startWorkout;
 $("#rTap").onclick = togglePause;
@@ -1028,6 +1062,7 @@ document.querySelectorAll("#fb button").forEach(b => b.onclick = () => {
   S.prog = clone(lastRun.progBefore);            // on peut changer d'avis : on repart de l'état d'avant
   const changes = applyFeedback(b.dataset.f, lastRun.ids, lastRun.format);
   last.fb = b.dataset.f; save();
+  stFeedback(last);
   document.querySelectorAll("#fb button").forEach(x => x.classList.toggle("sel", x === b));
   $("#thanks").innerHTML = describeChanges(changes, lastRun.format, b.dataset.f);
 });
@@ -1090,7 +1125,7 @@ function renderHist(){
     .sort((x, y) => y.h.date.localeCompare(x.h.date) || y.i - x.i).slice(0, 10);
   $("#hList").innerHTML = rows.length ? rows.map(({h, i}) =>
     `<div class="hrow"><div><div>${esc(h.title || "")}</div><div class="sub">${parseYmd(h.date).toLocaleDateString("fr-FR", {weekday:"short", day:"numeric", month:"short"})}${h.format ? " · " + FMT_NAME[h.format] : ""}${h.preserve ? " · jambes préservées" : ""}</div></div>` +
-    `<div class="r">${fmt(h.dur || 0)} ${FB[h.fb] || ""}<button class="del" data-i="${i}" aria-label="Supprimer">✕</button></div></div>`).join("")
+    `<div class="r">${h.strava ? (h.strava.status === "sent" ? '<span class="stag">Strava ✓</span>' : '<span class="stag wait">Strava…</span>') : ""}${fmt(h.dur || 0)} ${FB[h.fb] || ""}<button class="del" data-i="${i}" aria-label="Supprimer">✕</button></div></div>`).join("")
     : '<div class="sub">Aucune séance pour l\'instant — à demain matin !</div>';
   const progRows = EX.filter(e => hasLv(e) && S.prog[e.id] && (P(e.id).lv !== 2 || P(e.id).work !== WORK_DEF))
     .sort((a,b) => P(b.id).lv - P(a.id).lv);
@@ -1100,6 +1135,7 @@ function renderHist(){
   $("#tBeeps").classList.toggle("on", S.beeps);
   $("#tVoice").classList.toggle("on", S.voice);
   $("#tSilent").classList.toggle("on", S.silent);
+  stRender();
 }
 function openHist(){ calMonth = null; $("#setMsg").textContent = ""; show("hist"); renderHist(); window.scrollTo(0,0); }
 $("#histBtn").onclick = openHist;
@@ -1162,12 +1198,192 @@ $("#resetLv").onclick = () => {
   $("#setMsg").textContent = "Niveaux remis à zéro.";
 };
 
+/* =========================================================
+   Strava — envoi automatique de la séance (v2.0)
+   Identifiants stockés UNIQUEMENT sur cet appareil (clé séparée,
+   jamais dans l'export JSON ni dans le dépôt GitHub).
+   ========================================================= */
+const STKEY = "callistenik_strava";
+const STAPI = "https://www.strava.com";
+let ST = {id:"", secret:"", refresh:"", access:"", exp:0, auto:true, athlete:""};
+try { Object.assign(ST, JSON.parse(localStorage.getItem(STKEY)) || {}); } catch(e) {}
+function stSave(){ try { localStorage.setItem(STKEY, JSON.stringify(ST)); } catch(e) {} }
+const stReady = () => !!(ST.id && ST.secret && ST.refresh);
+const pad2 = n => String(n).padStart(2, "0");
+function localIso(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`; }
+const appUrl = () => location.origin + location.pathname;
+const FBTXT = {easy:"😌 Trop facile", ok:"💪 Parfait", hard:"🥵 Trop dur"};
+
+// Description détaillée de la séance
+function sessionDetail(p, h){
+  const L = [], lv = e => { const l = lvOf(e); return l ? ` (niv. ${l})` : ""; };
+  const head = p.format === "postrun" ? "Étirements après course" : `${FMT_NAME[p.format]} · ${p.rounds} tour${p.rounds > 1 ? "s" : ""}`;
+  L.push(`${p.title} — ${head}`);
+  L.push(`Durée : ${fmt(h.dur)}${h.preserve ? " · jambes préservées" : ""}${S.silent ? " · sans sauts" : ""}`);
+  if (p.warm.length){ L.push(""); L.push("🔸 Échauffement"); p.warm.forEach(e => L.push(`• ${e.name}`)); }
+  if (p.main.length){
+    L.push("");
+    if (p.format === "tabata"){
+      L.push(`🔥 Tabata (${p.rounds} bloc${p.rounds > 1 ? "s" : ""} de 8 × 20 s / 10 s)`);
+      for (let b = 0; b < p.rounds; b++) L.push(`• Bloc ${b+1} : ${nm(p.main[2*b])}${lv(p.main[2*b])} + ${nm(p.main[2*b+1])}${lv(p.main[2*b+1])}`);
+    } else if (p.format === "pyramid"){
+      L.push(`🔥 Pyramide (${PYR[p.rounds].join(" → ")} s)`);
+      p.main.forEach(e => L.push(`• ${nm(e)}${lv(e)}`));
+    } else {
+      L.push(p.format === "postrun" ? "💪 Haut du corps" : `🔥 Circuit × ${p.rounds}`);
+      p.main.forEach(e => L.push(`• ${nm(e)}${lv(e)} — ${workOf(e)} s`));
+    }
+  }
+  const cool = p.format === "postrun" ? p.stretch.map(x => [x.ex, x.dur]) : p.cool.map(e => [e, T.cool]);
+  if (cool.length){ L.push(""); L.push(p.format === "postrun" ? "🧘 Étirements" : "🧘 Retour au calme");
+    cool.forEach(([e, d]) => L.push(`• ${e.name}${e.sw ? ` (${Math.round(d/2)} s / côté)` : ""}`)); }
+  return L.join("\n");
+}
+function stDescription(h){
+  return h.strava.detail + (h.fb ? `\n\nRessenti : ${FBTXT[h.fb]}` : "") + "\n\n— envoyé par Callistenik";
+}
+
+async function stToken(){
+  if (ST.access && ST.exp > Date.now()/1000 + 120) return ST.access;
+  const r = await fetch(STAPI + "/oauth/token", {method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({client_id:ST.id, client_secret:ST.secret, grant_type:"refresh_token", refresh_token:ST.refresh})});
+  if (!r.ok){ const e = new Error("auth " + r.status); e.auth = r.status === 400 || r.status === 401; throw e; }
+  const j = await r.json();
+  ST.access = j.access_token; ST.exp = j.expires_at; if (j.refresh_token) ST.refresh = j.refresh_token; stSave();
+  return ST.access;
+}
+async function stCall(method, path, body){
+  const tok = await stToken();
+  const r = await fetch(STAPI + "/api/v3" + path, {method, headers:{"Authorization":"Bearer " + tok, "Content-Type":"application/json"}, body:JSON.stringify(body)});
+  if (r.status === 401){ ST.access = ""; stSave(); const e = new Error("auth 401"); e.auth = true; throw e; }
+  if (!r.ok){ const e = new Error("http " + r.status); e.http = r.status; try { e.detail = await r.text(); } catch(_) {} throw e; }
+  return r.json();
+}
+
+let stBusy = false;
+async function stFlush(){
+  if (stBusy || !stReady()) return;
+  stBusy = true;
+  try {
+    for (const h of S.history){
+      const x = h.strava;
+      if (!x || x.status === "sent") continue;
+      if (x.status === "error" && x.tries >= 5) continue;
+      if (!navigator.onLine){ x.status = "pending"; break; }
+      x.status = "sending"; stView(h);
+      try {
+        const a = await stCall("POST", "/activities", {name:"Callistenik — " + h.title, sport_type:"Workout",
+          start_date_local:x.start, elapsed_time:Math.max(60, h.dur), description:stDescription(h), trainer:1});
+        x.status = "sent"; x.id = a.id; x.fbSent = h.fb || null; delete x.err;
+      } catch(e){
+        x.tries = (x.tries || 0) + 1;
+        x.status = (e.auth || e.http) ? "error" : "pending";
+        x.err = e.auth ? "Connexion Strava refusée — reconnecte-toi dans Suivi › Strava." : e.http ? `Strava a répondu ${e.http}.` : "Réseau indisponible — nouvel essai plus tard.";
+        if (e.auth) { save(); stView(h); break; }
+      }
+      save(); stView(h);
+    }
+    // ressenti donné après l'envoi → mise à jour de la description
+    for (const h of S.history){
+      const x = h.strava;
+      if (!x || x.status !== "sent" || !x.id || (h.fb || null) === (x.fbSent || null)) continue;
+      try { await stCall("PUT", "/activities/" + x.id, {description:stDescription(h)}); x.fbSent = h.fb || null; save(); } catch(e) { break; }
+    }
+  } finally { stBusy = false; }
+  if ($("#hist").classList.contains("on")) renderHist();
+}
+function stFeedback(h){ if (h && h.strava) stFlush(); }
+
+// Ligne d'état sur l'écran de fin
+function stView(h){
+  const el = $("#eStrava"); if (!el) return;
+  const last = S.history[S.history.length - 1];
+  if (!h || h !== last) return;
+  el.className = "stv";
+  if (!h.strava){ el.textContent = ""; return; }
+  const x = h.strava;
+  if (x.status === "sent"){ el.classList.add("ok"); el.innerHTML = `✓ Envoyé sur Strava · <a href="https://www.strava.com/activities/${x.id}" target="_blank" rel="noopener">voir</a>`; }
+  else if (x.status === "sending") el.textContent = "Envoi sur Strava…";
+  else if (x.status === "error"){ el.classList.add("err"); el.textContent = "⚠️ " + (x.err || "Envoi Strava impossible."); }
+  else el.textContent = "⏳ Strava : en attente du réseau, envoi automatique dès que possible.";
+}
+
+// Carte Strava dans le Suivi
+function stRender(){
+  const ready = stReady();
+  $("#stSetup").hidden = ready; $("#stOn").hidden = !ready;
+  $("#tStrava").classList.toggle("on", !!ST.auto);
+  const wait = S.history.filter(h => h.strava && h.strava.status !== "sent").length;
+  const st = $("#stState"); st.className = "sv";
+  if (ready){ st.classList.add("ok"); st.innerHTML = `<b>Connecté${ST.athlete ? " — " + esc(ST.athlete) : ""}</b>` + (wait ? ` · ${wait} séance${wait > 1 ? "s" : ""} en attente d'envoi` : ""); }
+  else st.innerHTML = `Crée une « API Application » sur <b>strava.com/settings/api</b> (domaine de rappel : <b>${esc(location.hostname || "nicoj34.github.io")}</b>), puis colle ici son Client ID et son Client Secret.`;
+  if (!ready){ $("#stId").value = ST.id || ""; $("#stSecret").value = ST.secret || ""; }
+}
+const stCode = () => btoa(JSON.stringify({i:ST.id, s:ST.secret, r:ST.refresh, a:ST.athlete})).replace(/=+$/, "");
+$("#stConnect").onclick = () => {
+  const id = $("#stId").value.trim(), secret = $("#stSecret").value.trim();
+  if (!/^\d+$/.test(id) || secret.length < 20){ $("#stMsg").textContent = "Vérifie le Client ID (chiffres) et le Client Secret."; return; }
+  ST.id = id; ST.secret = secret; stSave();
+  const q = new URLSearchParams({client_id:id, redirect_uri:appUrl(), response_type:"code", approval_prompt:"auto", scope:"activity:write"});
+  location.href = STAPI + "/oauth/authorize?" + q;
+};
+$("#stPaste").onchange = () => {
+  try {
+    let v = $("#stPaste").value.trim(); v += "===".slice((v.length + 3) % 4);
+    const o = JSON.parse(atob(v));
+    if (!o.i || !o.s || !o.r) throw 0;
+    Object.assign(ST, {id:String(o.i), secret:o.s, refresh:o.r, athlete:o.a || "", access:"", exp:0, auto:true}); stSave();
+    $("#stPaste").value = ""; $("#stMsg").textContent = "Strava connecté ✓"; stRender(); stFlush();
+  } catch(e) { $("#stMsg").textContent = "Code de connexion non reconnu."; }
+};
+$("#tStrava").onclick = () => { ST.auto = !ST.auto; stSave(); stRender(); };
+$("#stCopy").onclick = async () => {
+  const c = stCode();
+  try { await navigator.clipboard.writeText(c); $("#stMsg").textContent = "Code copié ✓ — colle-le sur ton autre appareil (garde-le privé)."; }
+  catch(e) { prompt("Code de connexion (garde-le privé) :", c); }
+};
+$("#stOff").onclick = () => {
+  const b = $("#stOff");
+  if (!b.classList.contains("armed")){ b.classList.add("armed"); b.textContent = "Confirmer ?";
+    setTimeout(() => { b.classList.remove("armed"); b.textContent = "Déconnecter"; }, 3000); return; }
+  ST = {id:ST.id, secret:"", refresh:"", access:"", exp:0, auto:true, athlete:""}; stSave();
+  b.classList.remove("armed"); b.textContent = "Déconnecter"; $("#stMsg").textContent = "Strava déconnecté."; stRender();
+};
+
+// Retour de l'autorisation Strava (?code=…)
+async function stCallback(){
+  const code = params.get("code"), err = params.get("error");
+  if (!code && !err) return;
+  history.replaceState(null, "", appUrl());
+  openHist();
+  const card = $("#stCard"); setTimeout(() => card.scrollIntoView({block:"start"}), 50);
+  if (err){ $("#stMsg").textContent = "Autorisation Strava annulée."; return; }
+  if (!(params.get("scope") || "").includes("activity:write")){ $("#stMsg").textContent = "Il faut cocher l'autorisation de créer des activités. Recommence."; return; }
+  if (!ST.id || !ST.secret){ $("#stMsg").textContent = "Client ID / Secret introuvables sur cet appareil — saisis-les puis touche Connecter."; return; }
+  $("#stMsg").textContent = "Connexion à Strava…";
+  try {
+    const r = await fetch(STAPI + "/oauth/token", {method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({client_id:ST.id, client_secret:ST.secret, code, grant_type:"authorization_code"})});
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const j = await r.json();
+    Object.assign(ST, {refresh:j.refresh_token, access:j.access_token, exp:j.expires_at, auto:true,
+      athlete:j.athlete ? [j.athlete.firstname, j.athlete.lastname].filter(Boolean).join(" ") : ""});
+    stSave(); stRender();
+    $("#stMsg").textContent = "Strava connecté ✓ — tes prochaines séances partiront automatiquement.";
+  } catch(e) { $("#stMsg").textContent = "Échec de la connexion Strava (" + e.message + "). Vérifie le Client Secret."; }
+}
+
+window.addEventListener("online", stFlush);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && !run) stFlush(); });
+
 /* ---------- hors-ligne (service worker) ---------- */
 if ("serviceWorker" in navigator && location.protocol === "https:" && location.hostname.endsWith("github.io")){
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
 
 renderHome();
+stCallback();
+setTimeout(stFlush, 1500);
 </script>
 </body>
 </html>
